@@ -1,0 +1,2462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Racing Rivals — Pick Smart. Beat the Field.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CSS RESET & VARIABLES
+============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary:   #1a1a2e;
+  --secondary: #16213e;
+  --accent:    #e94560;
+  --gold:      #f5a623;
+  --silver:    #c0c0c0;
+  --bronze:    #cd7f32;
+  --text:      #ffffff;
+  --subtext:   #a0a0b0;
+  --success:   #00d4aa;
+  --card-bg:   #0f3460;
+  --rivalry:   #7b2fff;
+  --danger:    #e94560;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background: var(--primary);
+  color: var(--text);
+  overflow: hidden;
+  font-size: 16px;
+}
+
+/* ============================================================
+   APP SHELL
+============================================================ */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+  background: var(--primary);
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(0,0,0,0.8);
+}
+
+/* Desktop wrapper */
+@media (min-width: 600px) {
+  body { background: #0d0d1a; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  #app { height: 90vh; max-height: 860px; border-radius: 32px; border: 1px solid rgba(255,255,255,0.08); }
+}
+
+/* ============================================================
+   SCREEN SYSTEM
+============================================================ */
+.screen {
+  position: absolute;
+  inset: 0;
+  bottom: 70px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(30px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(233,69,96,0.3) transparent;
+}
+.screen.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(0);
+}
+
+/* ============================================================
+   BOTTOM NAV
+============================================================ */
+#bottom-nav {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 70px;
+  background: rgba(22,33,62,0.97);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 100;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+  background: none;
+  border: none;
+  color: var(--subtext);
+}
+.nav-item.active { color: var(--accent); }
+.nav-item svg { width: 22px; height: 22px; }
+.nav-item span { font-size: 10px; font-weight: 600; letter-spacing: 0.03em; }
+
+.nav-live-dot {
+  width: 7px; height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  position: absolute;
+  top: 6px; right: 10px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+/* ============================================================
+   FLOATING CONTROLS
+============================================================ */
+#float-controls {
+  position: absolute;
+  bottom: 82px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+  opacity: 0.85;
+}
+.float-btn {
+  background: rgba(22,33,62,0.92);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+.float-btn:hover { background: var(--accent); border-color: var(--accent); }
+.float-btn.playing { background: var(--gold); color: #000; border-color: var(--gold); }
+
+/* ============================================================
+   SHARED COMPONENTS
+============================================================ */
+
+/* Glass card */
+.glass-card {
+  background: rgba(15,52,96,0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 16px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.glass-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(233,69,96,0.3); }
+
+/* Section headers */
+.screen-header {
+  padding: 20px 16px 12px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.screen-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.05em;
+}
+.screen-sub { font-size: 0.75rem; color: var(--subtext); margin-top: 2px; }
+
+/* Compliance footer */
+.compliance-footer {
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 16px;
+  text-align: center;
+}
+.compliance-footer p {
+  font-size: 0.65rem;
+  color: var(--subtext);
+  line-height: 1.5;
+  margin-bottom: 3px;
+}
+.compliance-footer a { color: var(--success); text-decoration: none; }
+.age-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.badge-accent   { background: var(--accent); color: #fff; }
+.badge-gold     { background: var(--gold); color: #000; }
+.badge-silver   { background: var(--silver); color: #111; }
+.badge-bronze   { background: var(--bronze); color: #fff; }
+.badge-success  { background: var(--success); color: #000; }
+.badge-rivalry  { background: var(--rivalry); color: #fff; }
+.badge-subtext  { background: rgba(160,160,176,0.2); color: var(--subtext); }
+.badge-auto     { background: #ff9800; color: #000; animation: pulse 1.5s infinite; }
+
+/* Tier colours */
+.tier-bronze  { color: var(--bronze); }
+.tier-silver  { color: var(--silver); }
+.tier-gold    { color: var(--gold); }
+.tier-plat    { color: #e0d4ff; text-shadow: 0 0 10px rgba(123,47,255,0.8); }
+
+/* Progress bar */
+.progress-bar { background: rgba(255,255,255,0.1); border-radius: 100px; height: 6px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--accent), var(--gold)); }
+
+/* Animations */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes popIn { 0%{transform:scale(0.6);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+@keyframes trackMove { 0%{left:5%} 100%{left:88%} }
+@keyframes confettiFall {
+  0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(350px) rotate(720deg); opacity: 0; }
+}
+@keyframes leaderMoveUp { 0%{transform:translateY(40px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+@keyframes glow { 0%,100%{box-shadow:0 0 8px rgba(245,166,35,0.4)} 50%{box-shadow:0 0 24px rgba(245,166,35,0.9)} }
+
+/* ============================================================
+   SCREEN 1: HOME
+============================================================ */
+#screen-home {
+  padding: 0;
+}
+
+.home-hero {
+  background: linear-gradient(145deg, #1a1a2e 0%, #0f1830 60%, #1a1a2e 100%);
+  padding: 28px 20px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.home-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(233,69,96,0.12) 0%, transparent 65%);
+}
+
+/* SVG Logo */
+.logo-wrap { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; }
+.logo-wordmark {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #fff;
+  line-height: 1;
+}
+.logo-wordmark span { color: var(--accent); }
+
+.tagline {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.tagline-sub {
+  font-size: 0.75rem;
+  color: var(--subtext);
+  margin-bottom: 20px;
+}
+
+/* Live banner */
+.live-banner {
+  background: linear-gradient(90deg, rgba(233,69,96,0.25), rgba(233,69,96,0.1));
+  border: 1px solid rgba(233,69,96,0.4);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 16px 14px;
+  cursor: pointer;
+}
+.live-dot { width: 9px; height: 9px; background: var(--accent); border-radius: 50%; flex-shrink: 0; animation: pulse 1.2s infinite; }
+.live-text { font-size: 0.75rem; font-weight: 600; color: var(--accent); }
+.live-chevron { margin-left: auto; color: var(--accent); font-size: 0.8rem; }
+
+/* Week progress widget */
+.week-progress {
+  background: rgba(15,52,96,0.6);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 0 16px 14px;
+}
+.week-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.week-label { font-size: 0.72rem; color: var(--subtext); font-weight: 500; }
+.week-day { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; color: var(--gold); font-weight: 700; }
+.day-dots { display: flex; gap: 6px; margin-top: 8px; }
+.day-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.55rem; font-weight: 700;
+}
+.day-dot.done  { background: var(--success); color: #000; }
+.day-dot.win   { background: var(--gold); color: #000; }
+.day-dot.today { background: var(--accent); color: #fff; }
+.day-dot.ahead { background: rgba(255,255,255,0.1); color: var(--subtext); }
+
+/* Score mini-widget */
+.score-widget {
+  background: rgba(15,52,96,0.6);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 0 16px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.score-info { display: flex; flex-direction: column; }
+.score-label { font-size: 0.68rem; color: var(--subtext); }
+.score-value { font-family: 'Orbitron', sans-serif; font-size: 1.8rem; font-weight: 900; color: var(--gold); line-height: 1; }
+.score-pos { font-size: 0.72rem; color: var(--success); margin-top: 2px; }
+
+/* Position mini */
+.pos-mini { text-align: right; }
+.pos-rank { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; font-weight: 900; color: #fff; line-height: 1; }
+.pos-rank-label { font-size: 0.62rem; color: var(--subtext); }
+.pos-arrow { color: var(--success); font-size: 0.75rem; }
+
+/* Rival badge */
+.rival-alert {
+  background: rgba(123,47,255,0.15);
+  border: 1px solid rgba(123,47,255,0.35);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 16px 14px;
+}
+.rival-alert-icon { background: var(--rivalry); border-radius: 50%; width: 28px; height: 28px; display:flex;align-items:center;justify-content:center; flex-shrink:0; }
+.rival-alert-text { font-size: 0.72rem; color: var(--text); }
+.rival-alert-text strong { color: #c0a0ff; }
+
+/* CTA buttons */
+.cta-wrap { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 14px 20px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  width: 100%;
+  text-transform: uppercase;
+}
+.btn-primary:hover { background: #ff5577; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(233,69,96,0.5); }
+.btn-secondary {
+  background: rgba(255,255,255,0.07);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 12px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  width: 100%;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.12); }
+
+/* ============================================================
+   SCREEN 2: MY PICK
+============================================================ */
+#screen-pick {
+  padding: 0;
+}
+
+.pick-header {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  padding: 18px 16px 14px;
+  position: sticky; top: 0; z-index: 10;
+}
+.pick-title { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; }
+.pick-meta { display:flex; gap:12px; margin-top:6px; align-items:center; flex-wrap:wrap; }
+.pick-meta-item { font-size:0.68rem; color:var(--subtext); }
+.countdown-badge {
+  background: rgba(233,69,96,0.2);
+  border: 1px solid rgba(233,69,96,0.4);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent);
+  font-family: 'Orbitron', sans-serif;
+}
+.pick-progress { display:flex; gap:6px; margin-top:10px; }
+.pick-pip {
+  height: 4px; border-radius: 2px; flex: 1;
+  background: rgba(255,255,255,0.1);
+  transition: background 0.3s;
+}
+.pick-pip.done { background: var(--success); }
+.pick-pip.active { background: var(--accent); }
+
+/* Horse grid */
+.horse-grid { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+.horse-card {
+  background: rgba(15,52,96,0.7);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+.horse-card:hover { border-color: rgba(233,69,96,0.4); transform: translateY(-1px); }
+.horse-card.selected { border-color: var(--accent); background: rgba(233,69,96,0.12); }
+.horse-card.auto-selected { border-color: #ff9800; background: rgba(255,152,0,0.1); }
+
+.horse-name-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.horse-name { font-size:0.9rem; font-weight:700; color:var(--text); }
+.horse-sp { font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:700; color:var(--gold); margin-left:auto; }
+.horse-details { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:6px; }
+.horse-detail { font-size:0.65rem; color:var(--subtext); }
+.horse-detail strong { display:block; font-size:0.7rem; color:var(--text); font-weight:600; }
+.horse-form { letter-spacing:0.12em; font-family:'Orbitron',sans-serif; font-size:0.75rem; }
+.form-digit { display:inline; }
+.form-digit.f1 { color: var(--gold); }
+.form-digit.f2 { color: var(--silver); }
+.form-digit.f3 { color: var(--bronze); }
+.form-digit.f0 { color: var(--subtext); }
+.selected-check {
+  position: absolute; top:10px; right:10px;
+  width:20px;height:20px;
+  background: var(--accent); border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px; color:#fff; font-weight:700;
+}
+
+/* Streak + trade */
+.pick-info-bar { display:flex; gap:10px; padding: 0 16px 12px; }
+.pick-info-card {
+  flex:1; background: rgba(15,52,96,0.6);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px; padding:10px 12px;
+}
+.pic-info-label { font-size:0.62rem; color:var(--subtext); margin-bottom:3px; }
+.pic-info-value { font-size:0.78rem; font-weight:600; color:var(--text); }
+
+.pick-actions { padding:0 16px 8px; display:flex; gap:10px; }
+.btn-confirm {
+  flex:2; background: var(--accent); color:#fff;
+  border:none; border-radius:12px; padding:13px;
+  font-family:'Orbitron',sans-serif; font-size:0.78rem; font-weight:700;
+  cursor:pointer; transition:all 0.25s; letter-spacing:0.05em;
+  text-transform:uppercase;
+}
+.btn-confirm:disabled { opacity:0.4; cursor:not-allowed; }
+.btn-auto {
+  flex:1; background:rgba(255,152,0,0.15); color:#ff9800;
+  border:1px solid rgba(255,152,0,0.35); border-radius:12px; padding:13px;
+  font-size:0.72rem; font-weight:600; cursor:pointer; transition:all 0.25s;
+}
+
+/* ============================================================
+   SCREEN 3: LIVE TRACKER
+============================================================ */
+#screen-live { padding:0; }
+
+.live-header {
+  background: linear-gradient(135deg, #200010 0%, #1a1a2e 100%);
+  padding: 20px 16px 16px;
+  text-align: center;
+  position: sticky; top: 0; z-index: 10;
+}
+.live-badge {
+  display: inline-flex;
+  align-items: center; gap:8px;
+  background: rgba(233,69,96,0.2);
+  border:1px solid rgba(233,69,96,0.5);
+  border-radius:20px;
+  padding: 6px 16px;
+  margin-bottom:12px;
+}
+.live-badge-dot { width:10px;height:10px;background:var(--accent);border-radius:50%; animation:pulse 1s infinite; }
+.live-badge-text { font-family:'Orbitron',sans-serif; font-size:0.8rem; font-weight:700; color:var(--accent); letter-spacing:0.1em; }
+
+.live-horse-name { font-family:'Orbitron',sans-serif; font-size:1.3rem; font-weight:900; margin-bottom:4px; }
+.live-horse-sp { font-size:0.78rem; color:var(--gold); }
+
+/* Track */
+.track-wrap { margin:16px; }
+.track-container {
+  background: rgba(15,52,96,0.6);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;
+  padding:14px 20px;
+}
+.track-label { font-size:0.65rem; color:var(--subtext); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.06em; }
+.track-svg-wrap {
+  position: relative;
+  height: 56px;
+  overflow: hidden;
+}
+.track-rail {
+  position:absolute; bottom:12px; left:0; right:0;
+  height: 3px; background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+  border-radius: 2px;
+}
+.track-start, .track-finish {
+  position:absolute; bottom:4px;
+  font-size:0.55rem; color:var(--subtext); font-weight:600; letter-spacing:0.05em;
+}
+.track-start { left:4px; }
+.track-finish { right:4px; }
+
+.horse-marker {
+  position:absolute;
+  bottom: 14px;
+  left: 5%;
+  transition: left 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.horse-marker-inner {
+  width:28px; height:28px;
+  background: var(--accent);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 12px rgba(233,69,96,0.7);
+  transform: translateX(-50%);
+}
+
+/* Position indicator */
+.position-display {
+  background: rgba(15,52,96,0.5);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;
+  margin:0 16px;
+  padding:14px;
+  text-align:center;
+}
+.pos-label { font-size:0.65rem; color:var(--subtext); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.06em; }
+.pos-current { font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:900; color:var(--text); }
+.pos-of { font-size:0.75rem; color:var(--subtext); }
+
+/* Commentary */
+.commentary-wrap { margin:12px 16px; }
+.commentary-title { font-size:0.65rem; color:var(--subtext); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em; }
+.commentary-line {
+  background: rgba(15,52,96,0.5);
+  border-left:3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding:10px 12px;
+  font-size:0.78rem;
+  color:var(--text);
+  margin-bottom:6px;
+  animation: fadeIn 0.5s ease;
+  line-height:1.4;
+}
+
+/* Result reveal */
+.result-reveal {
+  margin:12px 16px;
+  background: rgba(15,52,96,0.8);
+  border-radius:16px;
+  padding:20px;
+  text-align:center;
+  display:none;
+}
+.result-reveal.show { display:block; animation:popIn 0.5s ease; }
+.result-label { font-size:0.72rem; color:var(--subtext); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.08em; }
+.result-outcome { font-family:'Orbitron',sans-serif; font-size:1.6rem; font-weight:900; margin-bottom:8px; }
+.result-outcome.win { color:var(--gold); }
+.result-outcome.place { color:var(--success); }
+.result-outcome.miss { color:var(--subtext); }
+.result-pts { font-size:0.85rem; color:var(--text); margin-bottom:8px; }
+.result-move { font-size:0.78rem; color:var(--success); font-weight:600; }
+
+/* ============================================================
+   SCREEN 4: LEADERBOARD
+============================================================ */
+#screen-leaderboard { padding:0; }
+
+.lb-header {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  padding:18px 16px 14px;
+  position:sticky; top:0; z-index:10;
+}
+.lb-week { font-size:0.68rem; color:var(--subtext); margin-top:2px; }
+.lb-pool-bar {
+  background: rgba(245,166,35,0.1);
+  border:1px solid rgba(245,166,35,0.3);
+  border-radius:8px;
+  padding:8px 12px;
+  margin-top:10px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.lb-pool-text { font-size:0.72rem; color:var(--gold); font-weight:600; }
+.lb-pool-sub { font-size:0.62rem; color:var(--subtext); }
+
+.lb-list { padding:12px 16px; display:flex; flex-direction:column; gap:8px; }
+.lb-row {
+  background: rgba(15,52,96,0.6);
+  border: 1.5px solid rgba(255,255,255,0.07);
+  border-radius:12px;
+  padding:12px 14px;
+  display:flex; align-items:center; gap:10px;
+  cursor:pointer;
+  transition:all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.lb-row:hover { border-color:rgba(255,255,255,0.15); }
+.lb-row.you { border-color:var(--accent); background:rgba(233,69,96,0.1); }
+.lb-row.rival-row { border-color:rgba(123,47,255,0.4); background:rgba(123,47,255,0.08); }
+.lb-row.pos-1 { border-color:rgba(245,166,35,0.5); background:rgba(245,166,35,0.08); }
+.lb-row.pos-2 { border-color:rgba(192,192,192,0.3); }
+.lb-row.pos-3 { border-color:rgba(205,127,50,0.3); }
+
+.lb-rank { font-family:'Orbitron',sans-serif; font-size:0.9rem; font-weight:700; width:24px; flex-shrink:0; text-align:center; }
+.lb-rank.r1 { color:var(--gold); }
+.lb-rank.r2 { color:var(--silver); }
+.lb-rank.r3 { color:var(--bronze); }
+
+.lb-avatar {
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.72rem;font-weight:700;flex-shrink:0;
+}
+
+.lb-info { flex:1; }
+.lb-name { font-size:0.82rem; font-weight:600; display:flex; align-items:center; gap:6px; }
+.lb-tier { font-size:0.6rem; color:var(--subtext); margin-top:1px; }
+
+.lb-pts { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; color:var(--text); text-align:right; }
+.lb-prize { font-size:0.62rem; color:var(--success); text-align:right; }
+
+.lb-arrow { width:20px; text-align:center; font-size:0.75rem; flex-shrink:0; }
+.lb-arrow.up { color:var(--success); }
+.lb-arrow.down { color:var(--accent); }
+.lb-arrow.same { color:var(--subtext); }
+
+/* Expanded detail */
+.lb-detail {
+  display:none;
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+.lb-detail.show { display:flex; gap:4px; flex-wrap:wrap; }
+.lb-day-score { font-size:0.62rem; padding:3px 6px; background:rgba(255,255,255,0.06); border-radius:4px; color:var(--subtext); }
+.lb-day-score.win { color:var(--gold); }
+.lb-day-score.place { color:var(--success); }
+
+/* ============================================================
+   SCREEN 5: PROFILE
+============================================================ */
+#screen-profile { padding:0; }
+
+.profile-hero {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  padding:24px 16px 20px;
+  text-align:center;
+}
+.avatar-circle {
+  width:72px;height:72px;border-radius:50%;
+  background: linear-gradient(135deg, var(--accent), var(--rivalry));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:700;
+  margin:0 auto 12px;
+  box-shadow:0 4px 20px rgba(233,69,96,0.4);
+}
+.profile-name { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:6px; }
+.tier-display { display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px; }
+.tier-name { font-size:0.85rem; font-weight:600; }
+.tier-pts-info { font-size:0.68rem; color:var(--subtext); }
+.tier-progress-wrap { width:200px; margin:0 auto 16px; }
+.tier-progress-label { display:flex; justify-content:space-between; font-size:0.62rem; color:var(--subtext); margin-bottom:4px; }
+
+/* Stats grid */
+.stats-wrap { padding:0 16px; }
+.stats-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px; }
+.stat-card {
+  background:rgba(15,52,96,0.6); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; padding:12px 10px; text-align:center;
+}
+.stat-value { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; color:var(--gold); }
+.stat-label { font-size:0.58rem; color:var(--subtext); margin-top:3px; letter-spacing:0.03em; }
+
+/* Best pick */
+.best-pick-card {
+  background: linear-gradient(135deg, rgba(245,166,35,0.12), rgba(15,52,96,0.8));
+  border: 1px solid rgba(245,166,35,0.3);
+  border-radius:14px; padding:14px; margin-bottom:14px;
+}
+.best-pick-label { font-size:0.62rem; color:var(--gold); font-weight:600; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:6px; }
+.best-pick-horse { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; margin-bottom:4px; }
+.best-pick-meta { font-size:0.68rem; color:var(--subtext); }
+.best-pick-pts { font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:900; color:var(--gold); float:right; margin-top:-30px; }
+
+/* Week history */
+.week-history { padding:0 16px; margin-bottom:14px; }
+.section-title { font-size:0.72rem; color:var(--subtext); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px; }
+.week-cards { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.week-mini {
+  background:rgba(15,52,96,0.6); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; padding:12px; flex-shrink:0; min-width:100px;
+}
+.week-mini-label { font-size:0.6rem; color:var(--subtext); margin-bottom:4px; }
+.week-mini-score { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; color:var(--text); }
+.week-mini-pos { font-size:0.68rem; margin-top:4px; }
+.week-mini-prize { font-size:0.65rem; color:var(--success); }
+
+/* ============================================================
+   SCREEN 6: RIVALRY
+============================================================ */
+#screen-rivalry { padding:0; }
+
+.rivalry-header {
+  background: linear-gradient(135deg, #1a0a35 0%, #0f1030 100%);
+  padding:20px 16px 16px;
+  position:sticky; top:0; z-index:10;
+  border-bottom:1px solid rgba(123,47,255,0.2);
+}
+.rivalry-count { font-size:0.72rem; color:#c0a0ff; margin-top:4px; }
+
+.rivalry-stats-bar {
+  display:flex; gap:10px; margin:0 16px 14px; margin-top:14px;
+}
+.rivalry-stat {
+  flex:1; background:rgba(123,47,255,0.12); border:1px solid rgba(123,47,255,0.25);
+  border-radius:12px; padding:10px; text-align:center;
+}
+.rivalry-stat-val { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; color:#c0a0ff; }
+.rivalry-stat-label { font-size:0.6rem; color:var(--subtext); margin-top:2px; }
+
+.rival-cards { padding:0 16px; display:flex; flex-direction:column; gap:10px; }
+.rival-card {
+  background:rgba(123,47,255,0.08); border:1.5px solid rgba(123,47,255,0.25);
+  border-radius:14px; padding:16px;
+  transition:all 0.25s;
+}
+.rival-card:hover { border-color:rgba(123,47,255,0.5); transform:translateY(-1px); }
+.rival-card-header { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.rival-avatar {
+  width:40px;height:40px;border-radius:50%;
+  background: linear-gradient(135deg, var(--rivalry), #4a1aaa);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem; font-weight:700;
+}
+.rival-name { font-size:0.9rem; font-weight:700; }
+.rival-rating { margin-left:auto; }
+.rival-record-row { display:flex; gap:12px; margin-bottom:10px; }
+.rival-record-item { text-align:center; flex:1; }
+.rival-record-val { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; }
+.rival-record-val.win { color:var(--success); }
+.rival-record-val.loss { color:var(--accent); }
+.rival-record-val.draw { color:var(--subtext); }
+.rival-record-label { font-size:0.6rem; color:var(--subtext); }
+.rival-last { font-size:0.68rem; color:var(--subtext); padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); }
+.rival-last strong { color:#c0a0ff; }
+
+/* Moment card */
+.rivalry-moment {
+  margin:0 16px 14px;
+  background:linear-gradient(135deg, rgba(123,47,255,0.15), rgba(15,52,96,0.8));
+  border:1px solid rgba(123,47,255,0.3);
+  border-radius:14px; padding:14px;
+}
+.moment-label { font-size:0.62rem; color:#c0a0ff; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; }
+.moment-text { font-size:0.82rem; font-weight:600; }
+
+/* ============================================================
+   SCREEN 7: SYNDICATE HUB
+============================================================ */
+#screen-syndicate { padding:0; }
+
+.syndicate-header {
+  background: linear-gradient(135deg, var(--primary) 0%, #0e2240 100%);
+  padding:20px 16px 16px;
+  position:sticky; top:0; z-index:10;
+}
+.syndicate-name-row { display:flex; align-items:center; gap:10px; margin-top:8px; }
+.syndicate-name { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; color:var(--gold); }
+.invite-btn {
+  margin-left:auto; background:rgba(245,166,35,0.15);
+  border:1px solid rgba(245,166,35,0.35); border-radius:8px;
+  padding:5px 10px; font-size:0.65rem; font-weight:600; color:var(--gold);
+  cursor:pointer;
+}
+
+.syndicate-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:14px 16px; }
+.syn-stat { background:rgba(15,52,96,0.6); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:10px; text-align:center; }
+.syn-stat-val { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; color:var(--text); }
+.syn-stat-label { font-size:0.58rem; color:var(--subtext); margin-top:2px; }
+
+.syn-lb-title { padding:4px 16px; font-size:0.68rem; color:var(--subtext); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
+.syn-lb-list { padding:0 16px; display:flex; flex-direction:column; gap:8px; }
+.syn-row {
+  background:rgba(15,52,96,0.6); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:10px;
+}
+.syn-row.you { border-color:var(--accent); background:rgba(233,69,96,0.08); }
+.syn-rank { font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:700; width:20px; }
+.syn-name { flex:1; font-size:0.82rem; font-weight:600; }
+.syn-pts { font-family:'Orbitron',sans-serif; font-size:0.9rem; font-weight:700; color:var(--gold); }
+.syn-career { font-size:0.62rem; color:var(--subtext); text-align:right; }
+
+/* Achievements */
+.syn-achievements { padding:12px 16px; }
+.achievement-badges { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.achievement {
+  background:rgba(245,166,35,0.1); border:1px solid rgba(245,166,35,0.3);
+  border-radius:10px; padding:8px 12px; display:flex; align-items:center; gap:6px;
+}
+.achievement-icon { font-size:0.9rem; }
+.achievement-text { font-size:0.68rem; font-weight:600; color:var(--gold); }
+
+/* ============================================================
+   SCREEN 8: PRIZE VAULT
+============================================================ */
+#screen-prizevault { padding:0; }
+
+.vault-header {
+  background: linear-gradient(135deg, #1a1000 0%, #1a1a2e 100%);
+  padding:20px 16px 16px;
+  position:sticky; top:0; z-index:10;
+  border-bottom:1px solid rgba(245,166,35,0.2);
+}
+
+.vault-pool-display {
+  margin:14px 16px;
+  background:linear-gradient(135deg, rgba(245,166,35,0.1), rgba(15,52,96,0.8));
+  border:1.5px solid rgba(245,166,35,0.35);
+  border-radius:16px; padding:18px; text-align:center;
+}
+.vault-pool-amt { font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:900; color:var(--gold); }
+.vault-pool-label { font-size:0.7rem; color:var(--subtext); margin-top:2px; }
+.vault-fee-note { font-size:0.65rem; color:var(--bronze); margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); }
+
+/* Prize table */
+.prize-table { margin:0 16px 14px; }
+.prize-table-title { font-size:0.68rem; color:var(--subtext); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+.prize-row {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  background:rgba(15,52,96,0.5);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px; margin-bottom:6px;
+}
+.prize-row.pos-1 { border-color:rgba(245,166,35,0.4); background:rgba(245,166,35,0.07); }
+.prize-row.pos-2 { border-color:rgba(192,192,192,0.2); }
+.prize-row.pos-3 { border-color:rgba(205,127,50,0.2); }
+.prize-pos { font-family:'Orbitron',sans-serif; font-size:0.75rem; font-weight:700; width:28px; }
+.prize-pct { flex:1; font-size:0.75rem; color:var(--subtext); }
+.prize-amt { font-family:'Orbitron',sans-serif; font-size:0.85rem; font-weight:700; }
+
+/* Dynamic scale */
+.scale-table { margin:0 16px 14px; }
+.scale-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.scale-row:last-child { border-bottom:none; }
+.scale-label { font-size:0.72rem; color:var(--subtext); }
+.scale-val { font-size:0.72rem; font-weight:600; color:var(--text); }
+.scale-1st { font-size:0.72rem; color:var(--gold); font-weight:700; }
+
+/* Expandable */
+.expandable {
+  margin:0 16px 10px;
+  background:rgba(15,52,96,0.5); border:1px solid rgba(255,255,255,0.07);
+  border-radius:12px; overflow:hidden;
+}
+.expandable-header {
+  padding:12px 14px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+  font-size:0.78rem; font-weight:600;
+}
+.expandable-body { padding:0 14px 12px; font-size:0.72rem; color:var(--subtext); line-height:1.6; display:none; }
+.expandable-body.open { display:block; }
+.expand-icon { transition:transform 0.3s; }
+.expand-icon.open { transform:rotate(180deg); }
+
+/* ============================================================
+   SCREEN 9: INVESTOR / BOARD VIEW
+============================================================ */
+#screen-investor { padding:0; }
+
+.investor-header {
+  background: linear-gradient(135deg, #0a0800 0%, #1a1a2e 100%);
+  padding:20px 16px 16px;
+  position:sticky; top:0; z-index:10;
+  border-bottom:1px solid rgba(245,166,35,0.2);
+}
+.investor-pitch {
+  font-size:0.78rem; color:var(--subtext); margin-top:6px; line-height:1.4;
+}
+
+.investor-score {
+  margin:14px 16px;
+  background:linear-gradient(135deg, rgba(245,166,35,0.12), rgba(15,52,96,0.9));
+  border:1px solid rgba(245,166,35,0.3);
+  border-radius:14px; padding:14px; text-align:center;
+}
+.inv-overall { font-family:'Orbitron',sans-serif; font-size:2.2rem; font-weight:900; color:var(--gold); }
+.inv-grade { font-size:0.8rem; color:var(--gold); }
+
+/* Market scorecard */
+.scorecard { margin:0 16px 14px; }
+.scorecard-title { font-size:0.68rem; color:var(--subtext); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+.scorecard-table { width:100%; border-collapse:collapse; font-size:0.62rem; }
+.scorecard-table th { padding:6px 4px; color:var(--subtext); font-weight:600; text-align:center; border-bottom:1px solid rgba(255,255,255,0.08); }
+.scorecard-table th:first-child { text-align:left; }
+.scorecard-table td { padding:7px 4px; border-bottom:1px solid rgba(255,255,255,0.04); text-align:center; }
+.scorecard-table td:first-child { text-align:left; color:var(--text); font-size:0.62rem; }
+.scorecard-table tr:last-child td { border-bottom:none; }
+.sc-us { color:var(--gold); font-weight:700; }
+.star-row { letter-spacing:-0.5px; }
+.stars-5 { color:var(--gold); }
+.stars-4 { color:var(--success); }
+.stars-3 { color:var(--silver); }
+.stars-2 { color:var(--subtext); }
+.stars-1 { color:var(--danger); opacity:0.6; }
+
+/* Commercial model */
+.inv-commercial { margin:0 16px 14px; }
+.inv-section-title { font-size:0.68rem; color:var(--subtext); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; font-weight:600; }
+.inv-model-card {
+  background:rgba(15,52,96,0.6); border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px; padding:14px; margin-bottom:8px;
+}
+.inv-model-card p { font-size:0.72rem; color:var(--subtext); line-height:1.5; }
+.inv-model-table { margin-top:10px; width:100%; border-collapse:collapse; font-size:0.68rem; }
+.inv-model-table td { padding:5px 4px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.inv-model-table td:last-child { text-align:right; color:var(--gold); }
+
+/* Roadmap */
+.roadmap { margin:0 16px 14px; }
+.roadmap-phase { margin-bottom:10px; }
+.phase-line { display:flex; align-items:flex-start; gap:10px; }
+.phase-dot { width:10px;height:10px;border-radius:50%;background:var(--gold);margin-top:4px;flex-shrink:0; animation:glow 2s ease-in-out infinite; }
+.phase-dot.p2 { background:var(--success); animation:none; }
+.phase-dot.p3 { background:var(--subtext); animation:none; }
+.phase-connector { width:1px;height:20px;background:rgba(255,255,255,0.1);margin-left:4.5px;margin-bottom:2px; }
+.phase-title { font-size:0.78rem; font-weight:700; color:var(--text); }
+.phase-desc { font-size:0.68rem; color:var(--subtext); margin-top:2px; }
+
+/* Board rec */
+.board-rec {
+  margin:0 16px 14px;
+  background:linear-gradient(135deg, rgba(245,166,35,0.08), rgba(15,52,96,0.9));
+  border:1.5px solid rgba(245,166,35,0.25);
+  border-radius:14px; padding:16px;
+}
+.board-rec-label { font-size:0.62rem; color:var(--gold); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+.board-rec-text { font-size:0.74rem; color:var(--text); line-height:1.6; }
+
+/* ============================================================
+   CONFETTI
+============================================================ */
+#confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+
+/* ============================================================
+   AUTO-PLAY PROGRESS
+============================================================ */
+#autoplay-progress {
+  position: fixed;
+  bottom: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(22,33,62,0.95);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 0.62rem;
+  color: var(--subtext);
+  z-index: 300;
+  display: none;
+  backdrop-filter: blur(8px);
+}
+#autoplay-progress.show { display: block; }
+
+/* ============================================================
+   MISC UTILITIES
+============================================================ */
+.section-pad { padding: 0 16px; margin-bottom: 14px; }
+.mt8 { margin-top: 8px; }
+.text-gold { color: var(--gold); }
+.text-success { color: var(--success); }
+.text-subtext { color: var(--subtext); }
+.text-accent { color: var(--accent); }
+.text-rivalry { color: var(--rivalry); }
+.fw700 { font-weight: 700; }
+.orbitron { font-family: 'Orbitron', sans-serif; }
+.divider { height: 1px; background: rgba(255,255,255,0.06); margin: 0 16px 14px; }
+
+/* Mobile tweaks */
+@media (max-width: 390px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .horse-details { grid-template-columns: 1fr 1fr; }
+  .syndicate-stats { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============================================================
+       SCREEN 1: HOME
+  ============================================================ -->
+  <div id="screen-home" class="screen active">
+
+    <!-- Hero -->
+    <div class="home-hero">
+      <div class="logo-wrap">
+        <!-- Inline SVG: horse silhouette -->
+        <svg viewBox="0 0 40 40" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Racing Rivals logo">
+          <path d="M32 8c-1-1-2-1.5-3-1.2l-3 1c-.8.3-1.5.2-2-.3L22 6c-1-1-2.5-.8-3.2.5l-1.3 2.3c-.4.7-1 1.1-1.7 1.1H15c-1.2 0-2 1-1.8 2.2l.4 2.4c.1.8-.1 1.6-.7 2.2l-1.8 1.8c-.8.8-.8 2 0 2.8l1.5 1.5c.5.5.7 1.3.5 2l-.9 3.4c-.3 1.2.4 2.3 1.6 2.6l2 .5c.9.2 1.6 1 1.7 2L18 33c.1.8.8 1.5 1.6 1.5H21c.9 0 1.7-.7 1.7-1.6v-2.4c0-.8.5-1.5 1.2-1.8l3.7-1.5c.7-.3 1.6 0 2 .7l1.2 2c.4.7 1.3 1 2.1.7l1-.4c.8-.3 1.2-1.2.9-2l-1.3-4.1c-.2-.6-.1-1.3.3-1.8l2.2-2.7c.6-.7.5-1.8-.1-2.4L34 18c-.6-.6-.8-1.5-.4-2.2l1.1-2.1c.5-.9.3-2.1-.6-2.7L32 8z" fill="#e94560"/>
+          <circle cx="27" cy="10" r="2" fill="#f5a623"/>
+        </svg>
+        <div class="logo-wordmark">RACING <span>RIVALS</span></div>
+      </div>
+      <div class="tagline">Pick Smart. Beat the Field.</div>
+      <div class="tagline-sub">A sharp weekly game built around horse racing picks</div>
+    </div>
+
+    <!-- Live banner -->
+    <div class="live-banner" onclick="showScreen('live')">
+      <div class="live-dot"></div>
+      <div class="live-text">RACE LIVE NOW — Tap to track Phoenix Rise</div>
+      <div class="live-chevron">›</div>
+    </div>
+
+    <!-- Week progress -->
+    <div class="week-progress" style="margin: 0 16px 14px;">
+      <div class="week-progress-header">
+        <span class="week-label">Week 24 · Thursday · Day 4 of 7</span>
+        <span class="week-day">3 races remaining</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:57%"></div></div>
+      <div class="day-dots">
+        <div class="day-dot win" title="Monday">M</div>
+        <div class="day-dot done" title="Tuesday">T</div>
+        <div class="day-dot done" title="Wednesday">W</div>
+        <div class="day-dot today" title="Thursday — TODAY">T</div>
+        <div class="day-dot ahead" title="Friday">F</div>
+        <div class="day-dot ahead" title="Saturday">S</div>
+        <div class="day-dot ahead" title="Sunday">S</div>
+      </div>
+    </div>
+
+    <!-- Score widget -->
+    <div class="score-widget">
+      <div class="score-info">
+        <span class="score-label">YOUR WEEKLY SCORE</span>
+        <span class="score-value" id="home-score">21.8</span>
+        <span class="score-pos" id="home-pos-label">2nd place — in the prizes</span>
+      </div>
+      <div class="pos-mini">
+        <div class="pos-rank-label">POSITION</div>
+        <div class="pos-rank" id="home-pos">2<sup style="font-size:0.5em">nd</sup></div>
+        <div class="pos-arrow" id="home-arrow">▲ moved up</div>
+      </div>
+    </div>
+
+    <!-- Rival alert -->
+    <div class="rival-alert">
+      <div class="rival-alert-icon">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M8 1l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9L4.4 12l.7-4L2.2 5.2l4-.6L8 1z" fill="#c0a0ff"/></svg>
+      </div>
+      <div class="rival-alert-text"><strong>Sarah M.</strong> just scored 4.2pts — she's now 2.5pts ahead of you</div>
+    </div>
+
+    <!-- CTAs -->
+    <div class="cta-wrap">
+      <button class="btn-primary" onclick="showScreen('pick')" id="join-cta">Join This Week's Table</button>
+      <button class="btn-secondary" onclick="showScreen('profile')">My Profile</button>
+    </div>
+
+    <!-- Quick access row -->
+    <div style="display:flex;gap:8px;padding:4px 16px 0;">
+      <button onclick="showScreen('leaderboard')" style="flex:1;background:rgba(15,52,96,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 4px;cursor:pointer;color:var(--text);font-size:0.65rem;font-weight:600;">Leaderboard</button>
+      <button onclick="showScreen('rivalry')" style="flex:1;background:rgba(123,47,255,0.12);border:1px solid rgba(123,47,255,0.25);border-radius:10px;padding:9px 4px;cursor:pointer;color:#c0a0ff;font-size:0.65rem;font-weight:600;">Rivalries</button>
+      <button onclick="showScreen('syndicate')" style="flex:1;background:rgba(15,52,96,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:9px 4px;cursor:pointer;color:var(--text);font-size:0.65rem;font-weight:600;">Syndicate</button>
+      <button onclick="showScreen('prizevault')" style="flex:1;background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.25);border-radius:10px;padding:9px 4px;cursor:pointer;color:var(--gold);font-size:0.65rem;font-weight:600;">Prize Vault</button>
+    </div>
+
+    <div class="compliance-footer">
+      <p><span class="age-badge">18+</span>Racing Rivals is a skill-based competition game. Not a bet.</p>
+      <p>Scores are based on official Starting Price and official race results.</p>
+      <p>Play responsibly. Do not chase losses. <a href="https://www.begambleaware.org" target="_blank">BeGambleAware.org</a></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 2: MY PICK
+  ============================================================ -->
+  <div id="screen-pick" class="screen">
+    <div class="pick-header">
+      <div class="screen-title">Today's Pick — Race 4</div>
+      <div class="pick-meta">
+        <span class="pick-meta-item">Thursday 26 Jun · 14:30 Kempton</span>
+        <span class="countdown-badge" id="countdown">Picks close in 2h 34m</span>
+      </div>
+      <div class="pick-meta" style="margin-top:6px;">
+        <span class="pick-meta-item">Pick 4 of 7 · Multiplier: <strong style="color:var(--gold)">1.3×</strong></span>
+      </div>
+      <div class="pick-progress" style="margin-top:8px;">
+        <div class="pick-pip done"></div>
+        <div class="pick-pip done"></div>
+        <div class="pick-pip done"></div>
+        <div class="pick-pip active"></div>
+        <div class="pick-pip"></div>
+        <div class="pick-pip"></div>
+        <div class="pick-pip"></div>
+      </div>
+    </div>
+
+    <div class="pick-info-bar">
+      <div class="pick-info-card">
+        <div class="pic-info-label">STREAK</div>
+        <div class="pic-info-value" style="color:var(--success)">2 in a row 🔥</div>
+        <div style="font-size:0.6rem;color:var(--subtext);margin-top:2px;">1 more = +2 bonus pts</div>
+      </div>
+      <div class="pick-info-card">
+        <div class="pic-info-label">TRADE WINDOW</div>
+        <div class="pic-info-value">1 swap available</div>
+        <div style="font-size:0.6rem;color:var(--subtext);margin-top:2px;">Use before Sunday</div>
+      </div>
+    </div>
+
+    <div class="horse-grid" id="horse-grid">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="pick-actions">
+      <button class="btn-confirm" id="confirm-pick-btn" disabled onclick="confirmPick()">Confirm Pick</button>
+      <button class="btn-auto" id="auto-pick-btn" onclick="triggerAutoPick()">Auto-Pick</button>
+    </div>
+
+    <div class="compliance-footer">
+      <p><span class="age-badge">18+</span>Prize pool formed from player entry fees. Operator fee: 15%.</p>
+      <p>Play responsibly. Do not chase losses. <a href="https://www.begambleaware.org" target="_blank">BeGambleAware.org</a></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 3: LIVE TRACKER
+  ============================================================ -->
+  <div id="screen-live" class="screen">
+    <div class="live-header">
+      <div class="live-badge">
+        <div class="live-badge-dot"></div>
+        <span class="live-badge-text">RACE IN PROGRESS</span>
+      </div>
+      <div class="live-horse-name" id="live-horse-name">Phoenix Rise</div>
+      <div class="live-horse-sp">Starting Price: 5/1 · Thursday · 1.3× multiplier</div>
+    </div>
+
+    <div class="track-wrap">
+      <div class="track-container">
+        <div class="track-label">1 Mile 2 Furlongs — Kempton Park</div>
+        <div class="track-svg-wrap" id="track-svg-wrap">
+          <div class="track-rail"></div>
+          <div class="track-start">START</div>
+          <div class="track-finish">FINISH</div>
+          <div class="horse-marker" id="horse-marker">
+            <div class="horse-marker-inner">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M13 4c-.4-.4-.8-.6-1.2-.5l-1.2.4c-.3.1-.6.1-.8-.1L9 3.4c-.4-.4-1-.3-1.3.2L7.2 4.8c-.2.3-.4.4-.7.4H6c-.5 0-.8.4-.7.9l.1.9c.1.3 0 .6-.3.8l-.7.7c-.3.3-.3.8 0 1.1l.6.6c.2.2.3.5.2.8l-.4 1.4c-.1.4.2.9.6 1l.8.2c.4.1.6.4.7.8l.1.7c.1.3.3.6.6.6H8c.3 0 .7-.3.7-.6v-.9c0-.3.2-.6.5-.7l1.5-.6c.3-.1.6 0 .8.3l.5.8c.2.3.5.4.8.3l.4-.2c.3-.1.5-.5.4-.8l-.5-1.6c-.1-.2 0-.5.1-.7l.9-1.1c.2-.3.2-.7 0-.9L13.6 7c-.2-.2-.3-.6-.1-.8l.4-.8c.2-.4.1-.8-.2-1L13 4z" fill="#fff"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="position-display">
+      <div class="pos-label">Current Position</div>
+      <div class="pos-current" id="live-position">3rd</div>
+      <div class="pos-of" id="live-of">of 8 runners</div>
+    </div>
+
+    <div class="commentary-wrap">
+      <div class="commentary-title">Race Commentary</div>
+      <div id="commentary-lines">
+        <div class="commentary-line">Good break from the stalls — tracking the pace in 3rd...</div>
+      </div>
+    </div>
+
+    <div class="result-reveal" id="result-reveal">
+      <div class="result-label">Race Result</div>
+      <div class="result-outcome win" id="result-outcome">WIN!</div>
+      <div class="result-pts" id="result-pts">5/1 × 1.3× multiplier = <strong style="color:var(--gold);font-family:'Orbitron',sans-serif">6.5 pts</strong></div>
+      <div class="result-move" id="result-move">You moved from 2nd to 1st place!</div>
+    </div>
+
+    <div style="padding: 0 16px; margin-bottom: 10px;">
+      <div class="glass-card" style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.72rem;color:var(--subtext);">Next race</span>
+        <span style="font-family:'Orbitron',sans-serif;font-size:0.78rem;color:var(--text);">Friday 09:40 Newmarket</span>
+        <span style="font-size:0.68rem;color:var(--accent);">in 45 min</span>
+      </div>
+    </div>
+
+    <div class="compliance-footer">
+      <p><span class="age-badge">18+</span>Racing Rivals is a skill-based competition game. Not a bet.</p>
+      <p>Play responsibly. <a href="https://www.begambleaware.org" target="_blank">BeGambleAware.org</a></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 4: LEADERBOARD
+  ============================================================ -->
+  <div id="screen-leaderboard" class="screen">
+    <div class="lb-header">
+      <div class="screen-title">This Week's Table</div>
+      <div class="lb-week">Week 24 · Mon 22 Jun – Sun 28 Jun 2026</div>
+      <div class="lb-pool-bar">
+        <div>
+          <div class="lb-pool-text">£250 Prize Pool</div>
+          <div class="lb-pool-sub">50 players × £5 entry · 85% to players</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="lb-pool-text">1st: £85</div>
+          <div class="lb-pool-sub">You're in 1st!</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lb-list" id="lb-list">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="compliance-footer">
+      <p><span class="age-badge">18+</span>Prize pool formed from player entry fees. Operator fee: 15%.</p>
+      <p>Scores based on official SP and official race results. Play responsibly. <a href="https://www.begambleaware.org" target="_blank">BeGambleAware.org</a></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 5: MY PROFILE
+  ============================================================ -->
+  <div id="screen-profile" class="screen">
+    <div class="profile-hero">
+      <div class="avatar-circle">AD</div>
+      <div class="profile-name">Alex D.</div>
+      <div class="tier-display">
+        <span class="badge badge-gold">Race Reader</span>
+      </div>
+      <div class="tier-pts-info" style="margin-bottom:10px;">2,340 career points · 660 pts to Track Master</div>
+      <div class="tier-progress-wrap">
+        <div class="tier-progress-label">
+          <span>Race Reader</span>
+          <span>Track Master</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:59%"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <span class="badge badge-gold" style="font-size:0.6rem;">Season Winner</span>
+        <span class="badge badge-success" style="font-size:0.6rem;">3-Day Streak</span>
+        <span class="badge badge-rivalry" style="font-size:0.6rem;">Heated Rival</span>
+      </div>
+    </div>
+
+    <div class="stats-wrap">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value">47</div><div class="stat-label">Weeks Played</div></div>
+        <div class="stat-card"><div class="stat-value">9</div><div class="stat-label">Weekly Wins</div></div>
+        <div class="stat-card"><div class="stat-value">31</div><div class="stat-label">Top 5 Finishes</div></div>
+        <div class="stat-card"><div class="stat-value">28.3</div><div class="stat-label">Best Week Score</div></div>
+        <div class="stat-card"><div class="stat-value">10.4</div><div class="stat-label">Best Day Score</div></div>
+        <div class="stat-card"><div class="stat-value">66%</div><div class="stat-label">Win Rate</div></div>
+        <div class="stat-card"><div class="stat-value">£312</div><div class="stat-label">Total Prizes</div></div>
+        <div class="stat-card"><div class="stat-value">3</div><div class="stat-label">Week Streak</div></div>
+        <div class="stat-card"><div class="stat-value">2,340</div><div class="stat-label">Career Points</div></div>
+      </div>
+
+      <div class="best-pick-card">
+        <div class="best-pick-label">Best-Ever Pick</div>
+        <div class="best-pick-horse">Midnight Thunder</div>
+        <div class="best-pick-meta">Won at 8/1 · Kempton · 14:30 · Wk 18 2026</div>
+        <div class="best-pick-pts">+10.4</div>
+      </div>
+    </div>
+
+    <div class="week-history">
+      <div class="section-title">Recent Weeks</div>
+      <div class="week-cards">
+        <div class="week-mini">
+          <div class="week-mini-label">Wk 23</div>
+          <div class="week-mini-score">24.1</div>
+          <div class="week-mini-pos" style="color:var(--silver);">2nd place</div>
+          <div class="week-mini-prize">£31</div>
+        </div>
+        <div class="week-mini">
+          <div class="week-mini-label">Wk 22</div>
+          <div class="week-mini-score">19.7</div>
+          <div class="week-mini-pos" style="color:var(--bronze);">3rd place</div>
+          <div class="week-mini-prize">£19</div>
+        </div>
+        <div class="week-mini">
+          <div class="week-mini-label">Wk 21</div>
+          <div class="week-mini-score">28.0</div>
+          <div class="week-mini-pos" style="color:var(--gold);">1st place</div>
+          <div class="week-mini-prize">£85</div>
+        </div>
+        <div class="week-mini">
+          <div class="week-mini-label">Wk 20</div>
+          <div class="week-mini-score">16.2</div>
+          <div class="week-mini-pos" style="color:var(--subtext);">5th place</div>
+          <div class="week-mini-prize">£6</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 16px;margin-bottom:14px;">
+      <div class="section-title">Season Progress</div>
+      <div class="glass-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:0.78rem;font-weight:600;">Month Master</div>
+            <div style="font-size:0.65rem;color:var(--subtext);">June 2026 · 3rd of 50 players</div>
+          </div>
+          <div class="badge badge-gold">Month 2 of 3</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 16px;margin-bottom:8px;">
+      <button class="btn-secondary">Share My Stats Card</button>
+    </div>
+
+    <div class="compliance-footer">
+      <p><span class="age-badge">18+</span>Play responsibly. Do not chase losses. <a href="https://www.begambleaware.org" target="_blank">BeGambleAware.org</a></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 6: RIVALRY
+  ============================================================ -->
+  <div id="screen-rivalry" class="screen">
+    <div class="rivalry-header">
+      <div class="screen-title" style="font-family:'Orbitron',sans-serif;font-size:1.1rem;color:#c0a0ff;">Your Rivalries</div>
+      <div class="rivalry-count">3 active rivalries · 47 total H2H races</div>
+    </div>
+
+    <div class="rivalry-stats-bar">
+      <div class="rivalry-stat">
+        <div class="rivalry-stat-val">28</div>
+        <div class="rivalry-stat-label">H2H Wins</div>
+      </div>
+      <div class="rivalry-stat">
+        <div class="rivalry-stat-val">15</div>
+        <div class="rivalry-stat-label">H2H Losses</div>
+      </div>
+      <div class="rivalry-stat">
+        <div class="rivalry-stat-val">4</div>
+        <div class="rivalry-stat-label">Draws</div>
+      </div>
+    </div>
+
+    <!-- Biggest moment -->
+    <div class="rivalry-moment" style="margin-top:4px;">
+      <div class="moment-label">Biggest H2H Win</div>
+      <div class="moment-text">18.4pt margin vs Sarah M. — 3 weeks ago</div>
+      <div style="font-size:0.65rem;color:var(--subtext);margin-top:4px;">Wk 21 · Alex D. 28.0pts vs Sarah M. 9.6pts</div>
+    </div>
+
+    <div class="rival-cards">
+
+      <!-- Rival 1 -->
+      <div class="rival-card">
+        <div class="rival-card-header">
+          <div class="rival-avatar">SM</div>
+          <div>
+            <div class="rival-name">Sarah M.</div>
+            <div style="font-size:0.65rem;color:var(--subtext);">Track Master · 47 H2H races</div>
+          </div>
+          <div class="rival-rating"><span class="badge badge-rivalry">Heated</span></div>
+        </div>
+        <div class="rival-record-row">
+          <div class="rival-record-item">
+            <div class="rival-record-val win">14</div>
+            <div class="rival-record-label">Your Wins</div>
+          </div>
+          <div class="rival-record-item">
+            <div class="rival-record-val loss">11</div>
+            <div class="rival-record-label">Her Wins</div>
+          </div>
+          <div class="rival-record-item">
+            <div class="rival-record-val draw">3</div>
+            <div class="rival-record-label">Draws</div>
+          </div>
+        </div>
+        <div class="rival-last">Last H2H: <strong>You won by 3.2pts</strong> · 2 days ago · Wk 23</div>
+        <div style="margin-top:8px;">
+          <div style="font-size:0.62rem;color:var(--subtext);margin-bottom:4px;">Last 4 weeks vs Sarah M.</div>
+          <div style="display:flex;gap:4px;">
+            <div style="flex:1;background:rgba(0,212,170,0.2);border:1px solid rgba(0,212,170,0.3);border-radius:6px;padding:4px;text-align:center;font-size:0.65rem;color:var(--success);">W +3.2</div>
+            <div style="flex:1;background:rgba(233,69,96,0.2);border:1px solid rgba(233,69,96,0.3);border-radius:6px;padding:4px;text-align:center;font-size:0.65rem;color:var(--accent);">L -1.4</div>
+            <div style="flex:1;background:rgba(0,212,170,0.2);border:1px solid rgba(0,212,170,0.3);border-radius:6px;padding:4px;text-align:center;font-size:0.65rem;color:var(--success);">W +18.4</div>
+            <div style="flex:1;background:rgba(0,212,170,0.2);border:1px solid rgba(0,212,170,0.3);border-radius:6px;padding:4px;text-align:center;font-size:0.65rem;color:var(--success);">W +4.1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rival 2 -->
+      <div class="rival-card">
+        <div class="rival-card-header">
+          <div class="rival-avatar">MT</div>
+          <div>
+            <div class="rival-name">Marcus T.</div>
+            <div style="font-size:0.65rem;color:var(--subtext);">Handicapper · 18 H2H races</div>
+          </div>
+          <div class="rival-rating"><span class="badge badge-rivalry" style="background:rgba(123,47,255,0.5);">Competitive</span></div>
+        </div>
+        <div class="rival-record-row">
+          <div class="rival-record-item">
+            <div class="rival-record-val win">8</div>
+            <div class="rival-record-label">Your Wins</div>
+          </div>
+          <div class="rival-record-item">
+            <div class="rival-record-val loss">9</div>
+            <div class="rival-record-label">His Wins</div>
+          </div>
+          <div class="rival-record-item">
+            <div class="rival-record-val draw">1</div>
+            <div class="rival-record-label">Draws</div>
+          </div>
+        </div>
+        <div class="rival-last">Last H2H: <strong>He won by 0.8pts</strong> · 1 week ago · Wk 23</div>
+      </div>
+
+    </div>
+
+    <div style="padding:0 16px;margin-top:14px;margin-bottom:8px;display:flex;gap:10px;">
+      <button class="btn-secondary" style="flex:1;">Add Rival</button>
+      <button class="btn-secondary" style="flex:1;">Rival Alerts: ON</button>
+    </div>
+
+    <div class="compliance-footer">
+      <p><span class="age-badge">18+</span>Play responsibly. Do not chase losses. <a href="https://www.begambleaware.org" target="_blank">BeGambleAware.org</a></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 7: SYNDICATE HUB
+  ============================================================ -->
+  <div id="screen-syndicate" class="screen">
+    <div class="syndicate-header">
+      <div class="screen-title">Syndicate Hub</div>
+      <div class="syndicate-name-row">
+        <div class="syndicate-name">The Form Studiers</div>
+        <button class="invite-btn">Share Code: FS24</button>
+      </div>
+      <div style="margin-top:6px;"><span class="badge badge-gold">Gold Syndicate</span></div>
+    </div>
+
+    <div class="syndicate-stats">
+      <div class="syn-stat"><div class="syn-stat-val">8</div><div class="syn-stat-label">Members</div></div>
+      <div class="syn-stat"><div class="syn-stat-val">14</div><div class="syn-stat-label">Weeks Active</div></div>
+      <div class="syn-stat"><div class="syn-stat-val">3</div><div class="syn-stat-label">Group Wins</div></div>
+      <div class="syn-stat"><div class="syn-stat-val">4,820</div><div class="syn-stat-label">Combined Pts</div></div>
+    </div>
+
+    <div style="margin:0 16px 10px;background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2);border-radius:10px;padding:10px 12px;">
+      <div style="font-size:0.65rem;color:var(--gold);font-weight:600;">Group Record</div>
+      <div style="font-size:0.75rem;color:var(--text);margin-top:2px;">Best week: 342 combined pts — Week 23 · 2026</div>
+    </div>
+
+    <div class="syn-lb-title">This Week's Standings</div>
+    <div class="syn-lb-list">
+      <div class="syn-row you">
+        <div class="syn-rank" style="color:var(--gold);">1</div>
+        <div class="syn-name">Alex D. <span class="badge badge-accent" style="font-size:0.55rem;padding:1px 4px;">YOU</span></div>
+        <div>
+          <div class="syn-pts">28.3</div>
+          <div class="syn-career" style="text-align:right;">4,820 career</div>
+        </div>
+      </div>
+      <div class="syn-row">
+        <div class="syn-rank" style="color:var(--silver);">2</div>
+        <div class="syn-name">Jamie L.</div>
+        <div><div class="syn-pts">22.1</div><div class="syn-career">2,140 career</div></div>
+      </div>
+      <div class="syn-row">
+        <div class="syn-rank" style="color:var(--bronze);">3</div>
+        <div class="syn-name">Priya K.</div>
+        <div><div class="syn-pts">18.7</div><div class="syn-career">1,830 career</div></div>
+      </div>
+      <div class="syn-row">
+        <div class="syn-rank">4</div>
+        <div class="syn-name">Tom R.</div>
+        <div><div class="syn-pts">15.4</div><div class="syn-career">1,220 career</div></div>
+      </div>
+      <div class="syn-row">
+        <div class="syn-rank">5</div>
+        <div class="syn-name">Clare W.</div>
+        <div><div class="syn-pts">14.9</div><div class="syn-career">980 career</div></div>
+      </div>
+      <div class="syn-row">
+        <div class="syn-rank">6</div>
+        <div class="syn-name">Ben H.</div>
+        <div><div class="syn-pts">12.3</div><div class="syn-career">760 career</div></div>
+      </div>
+      <div class="syn-row">
+        <div class="syn-rank">7</div>
+        <div class="syn-name">Aisha O.</div>
+        <div><div class="syn-pts">11.0</div><div class="syn-career">640 career</div></div>
+      </div>
+      <div class="syn-row">
+        <div class="syn-rank">8</div>
+        <div class="syn-name">Dan C.</div>
+        <div><div class="syn-pts">9.8</div><div class="syn-career">510 career</div></div>
+      </div>
+    </div>
+
+    <div class="syn-achievements">
+      <div class="section-title">Syndicate Achievements</div>
+      <div class="achievement-badges">
+        <div class="achievement">
+          <div class="achievement-icon">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><path d="M8 1l1.6 3.3 3.6.5-2.6 2.6.6 3.6-3.2-1.7L4.8 11l.6-3.6L2.8 4.8l3.6-.5L8 1z" fill="#f5a623"/></svg>
+          </div>
+          <span class="achievement-text">5 Group Wins</span>
+        </div>
+        <div class="achievement">
+          <div class="achievement-icon">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><rect x="2" y="8" width="3" height="6" rx="1" fill="#f5a623"/><rect x="6" y="5" width="3" height="9" rx="1" fill="#f5a623"/><rect x="10" y="2" width="3" height="12" rx="1" fill="#f5a623"/></svg>
+          </div>
+          <span class="achievement-text">14 Weeks Running</span>
+        </div>
+        <div class="achievement">
+          <div class="achievement-icon">
+            <svg viewBox="0 0 16 16" width="16" height="16" fill="none"><circle cx="8" cy="8" r="6" stroke="#f5a623" stroke-width="1.5"/><path d="M5 8l2 2 4-4" stroke="#f5a623" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <span class="achievement-text">342pt Group Record</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 16px;margin-bottom:8px;">
+      <button class="btn-primary" style="background:rgba(245,166,35,0.2);border:1px solid rgba(245,166,35,0.4);color:var(--gold);">Invite Members · Code: FS24</button>
+    </div>
+
+    <div class="compliance-footer">
+      <p><span class="age-badge">18+</span>Play responsibly. Do not chase losses. <a href="https://www.begambleaware.org" target="_blank">BeGambleAware.org</a></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 8: PRIZE VAULT
+  ============================================================ -->
+  <div id="screen-prizevault" class="screen">
+    <div class="vault-header">
+      <div class="screen-title" style="color:var(--gold);font-family:'Orbitron',sans-serif;">Prize Vault</div>
+      <div style="font-size:0.68rem;color:var(--subtext);margin-top:2px;">Week 24 · 10 players · £5 entry fee</div>
+    </div>
+
+    <div class="vault-pool-display">
+      <div class="vault-pool-amt">£42.50</div>
+      <div class="vault-pool-label">Total Prize Pool</div>
+      <div class="vault-fee-note">85% of £50 entry total goes to players · Operator fee: 15% (£7.50) retained for operations</div>
+    </div>
+
+    <div class="prize-table">
+      <div class="prize-table-title">Prize Breakdown</div>
+      <div class="prize-row pos-1">
+        <div class="prize-pos" style="color:var(--gold);">1st</div>
+        <div class="prize-pct">40% of pool</div>
+        <div class="prize-amt" style="color:var(--gold);">£17.00</div>
+      </div>
+      <div class="prize-row pos-2">
+        <div class="prize-pos" style="color:var(--silver);">2nd</div>
+        <div class="prize-pct">25% of pool</div>
+        <div class="prize-amt" style="color:var(--silver);">£10.63</div>
+      </div>
+      <div class="prize-row pos-3">
+        <div class="prize-pos" style="color:var(--bronze);">3rd</div>
+        <div class="prize-pct">15% of pool</div>
+        <div class="prize-amt" style="color:var(--bronze);">£6.38</div>
+      </div>
+      <div class="prize-row">
+        <div class="prize-pos">4th</div>
+        <div class="prize-pct">10% of pool</div>
+        <div class="prize-amt">£4.25</div>
+      </div>
+      <div class="prize-row">
+        <div class="prize-pos">5th</div>
+        <div class="prize-pct">5% of pool</div>
+        <div class="prize-amt">£2.12</div>
+      </div>
+      <div class="prize-row" style="border-color:rgba(0,212,170,0.25);background:rgba(0,212,170,0.05);">
+        <div class="prize-pos" style="color:var(--success);font-size:0.65rem;">Streak</div>
+        <div class="prize-pct">5% · shared</div>
+        <div class="prize-amt" style="color:var(--success);">£2.12</div>
+      </div>
+    </div>
+
+    <!-- Dynamic scale table -->
+    <div class="scale-table">
+      <div style="font-size:0.68rem;color:var(--subtext);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding:0 16px;margin-bottom:8px;">As Your Table Grows</div>
+      <div style="background:rgba(15,52,96,0.5);border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin:0 16px;overflow:hidden;">
+        <div class="scale-row" style="background:rgba(233,69,96,0.08);border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div class="scale-label">Table size</div>
+          <div class="scale-val">Pool</div>
+          <div class="scale-1st">1st Place</div>
+        </div>
+        <div class="scale-row"><div class="scale-label">10 players × £5</div><div class="scale-val">£42.50</div><div class="scale-1st">£17</div></div>
+        <div class="scale-row"><div class="scale-label">25 players × £5</div><div class="scale-val">£106.25</div><div class="scale-1st">£43</div></div>
+        <div class="scale-row"><div class="scale-label">50 players × £5</div><div class="scale-val">£212.50</div><div class="scale-1st">£85</div></div>
+        <div class="scale-row"><div class="scale-label">100 players × £5</div><div class="scale-val">£425.00</div><div class="scale-1st">£170</div></div>
+        <div class="scale-row" style="border-bottom:none;"><div class="scale-label">200 players × £5</div><div class="scale-val">£850.00</div><div class="scale-1st">£340</div></div>
+      </div>
+    </div>
+
+    <div class="expandable" style="margin-top:14px;">
+      <div class="expandable-header" onclick="toggleExpand(this)">
+        <span>How scoring works</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="expandable-body">
+        <strong style="color:var(--text);">Win:</strong> Full SP odds as points (e.g. 10/1 winner = 10 pts)<br><br>
+        <strong style="color:var(--text);">Place:</strong> SP ÷ number of official place positions (e.g. 10/1 horse in 3-place race = 3.33 pts)<br><br>
+        <strong style="color:var(--text);">Day Multiplier:</strong> Mon 1.0× · Tue 1.1× · Wed 1.2× · Thu 1.3× · Fri 1.4× · Sat 1.6× · Sun 1.5×<br><br>
+        <strong style="color:var(--text);">Hard Cap:</strong> Maximum 25 pts per day regardless of SP × multiplier.<br><br>
+        <strong style="color:var(--text);">Scoring anchor:</strong> Official Starting Price — never shop odds.
+      </div>
+    </div>
+
+    <div class="expandable">
+      <div class="expandable-header" onclick="toggleExpand(this)">
+        <span>How streak bonus works</span>
+        <span class="expand-icon">▼</span>
+      </div>
+      <div class="expandable-body">
+        Score in 3 consecutive days (any Win or Place result) and receive a +2 bonus point reward. Resets if you miss a scoring day. Unused trade swap also earns +1 loyalty point at week end.
+      </div>
+    </div>
+
+    <div style="margin:0 16px 14px;padding:12px;background:rgba(0,212,170,0.07);border:1px solid rgba(0,212,170,0.2);border-radius:10px;">
+      <div style="font-size:0.72rem;color:var(--success);font-weight:600;">No fixed odds. No house edge against you.</div>
+      <div style="font-size:0.65rem;color:var(--subtext);margin-top:4px;">Pooled prize structure. Skill-based competition. Transparent operator fee on every screen.</div>
+    </div>
+
+    <div class="compliance-footer">
+      <p><span class="age-badge">18+</span>Prize pool formed from player entry fees. Operator fee: 15%.</p>
+      <p>Racing Rivals is a skill-based competition game. Not a bet.</p>
+      <p>Play responsibly. Do not chase losses. <a href="https://www.begambleaware.org" target="_blank">BeGambleAware.org</a></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCREEN 9: INVESTOR / BOARD VIEW
+  ============================================================ -->
+  <div id="screen-investor" class="screen">
+    <div class="investor-header">
+      <div class="screen-title" style="color:var(--gold);font-family:'Orbitron',sans-serif;">Investment Case</div>
+      <div class="investor-pitch">
+        Weekly horse racing prediction game. Small tables. Real stakes. Deep engagement.
+      </div>
+    </div>
+
+    <div class="investor-score">
+      <div style="font-size:0.65rem;color:var(--subtext);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;">Overall Market Score</div>
+      <div class="inv-overall">8.5/10</div>
+      <div class="inv-grade">B+ to A− tier · Significantly above category average</div>
+    </div>
+
+    <!-- Market scorecard -->
+    <div class="scorecard">
+      <div class="scorecard-title">Competitive Scorecard</div>
+      <div style="background:rgba(15,52,96,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;padding:4px 0;">
+        <table class="scorecard-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th style="padding:8px 6px 8px 12px;font-size:0.6rem;">Feature</th>
+              <th style="color:var(--gold);">Rivals</th>
+              <th>FPL</th>
+              <th>DK</th>
+              <th>Betting</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding-left:12px;font-size:0.62rem;">Racing specificity</td>
+              <td class="sc-us star-row stars-5">★★★★★</td>
+              <td class="star-row stars-1">★</td>
+              <td class="star-row stars-1">★</td>
+              <td class="star-row stars-5">★★★★★</td>
+            </tr>
+            <tr>
+              <td style="padding-left:12px;font-size:0.62rem;">Daily decision depth</td>
+              <td class="sc-us star-row stars-5">★★★★★</td>
+              <td class="star-row stars-4">★★★★</td>
+              <td class="star-row stars-4">★★★★</td>
+              <td class="star-row stars-2">★★</td>
+            </tr>
+            <tr>
+              <td style="padding-left:12px;font-size:0.62rem;">Live result tension</td>
+              <td class="sc-us star-row stars-5">★★★★★</td>
+              <td class="star-row stars-3">★★★</td>
+              <td class="star-row stars-3">★★★</td>
+              <td class="star-row stars-3">★★★</td>
+            </tr>
+            <tr>
+              <td style="padding-left:12px;font-size:0.62rem;">Progression & rank</td>
+              <td class="sc-us star-row stars-5">★★★★★</td>
+              <td class="star-row stars-5">★★★★★</td>
+              <td class="star-row stars-2">★★</td>
+              <td class="star-row stars-1">★</td>
+            </tr>
+            <tr>
+              <td style="padding-left:12px;font-size:0.62rem;">Social / H2H rivalry</td>
+              <td class="sc-us star-row stars-5">★★★★★</td>
+              <td class="star-row stars-2">★★</td>
+              <td class="star-row stars-2">★★</td>
+              <td class="star-row stars-1">★</td>
+            </tr>
+            <tr>
+              <td style="padding-left:12px;font-size:0.62rem;">Transparent scoring</td>
+              <td class="sc-us star-row stars-5">★★★★★</td>
+              <td class="star-row stars-4">★★★★</td>
+              <td class="star-row stars-2">★★</td>
+              <td class="star-row stars-2">★★</td>
+            </tr>
+            <tr>
+              <td style="padding-left:12px;font-size:0.62rem;">Beginner friendly</td>
+              <td class="sc-us star-row stars-5">★★★★★</td>
+              <td class="star-row stars-3">★★★</td>
+              <td class="star-row stars-4">★★★★</td>
+              <td class="star-row stars-2">★★</td>
+            </tr>
+            <tr>
+              <td style="padding-left:12px;font-size:0.62rem;">Commercial viability</td>
+              <td class="sc-us star-row stars-5">★★★★★</td>
+              <td class="star-row stars-5">★★★★★</td>
+              <td class="star-row stars-5">★★★★★</td>
+              <td class="star-row stars-5">★★★★★</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Positioning -->
+    <div class="inv-commercial">
+      <div class="inv-section-title">Positioning vs Competitors</div>
+      <div class="inv-model-card">
+        <p><strong style="color:var(--text);">vs Fantasy Premier League:</strong> Superior racing specificity + intimate small-table format. FPL has 11m users but zero racing product.</p><br>
+        <p><strong style="color:var(--text);">vs DraftKings/FanDuel:</strong> No multi-entry spam. One clean, meaningful pick per day. Simpler to understand, harder to master.</p><br>
+        <p><strong style="color:var(--text);">vs Betting Apps:</strong> Transparent scoring, skill not luck, no fixed-odds exposure. Operator has no house edge against players.</p><br>
+        <p><strong style="color:var(--text);">vs Super 6 / Prediction Games:</strong> Full progression system, rivalry and career identity built in from day one.</p>
+      </div>
+    </div>
+
+    <!-- Commercial model -->
+    <div class="inv-commercial">
+      <div class="inv-section-title">Commercial Model</div>
+      <div class="inv-model-card">
+        <p>Pooled prize structure. 15% operator fee. No fixed-odds exposure. Predictable fee take per filled contest. Clear player value at every touchpoint.</p>
+        <table class="inv-model-table" style="margin-top:10px;">
+          <tr><td style="color:var(--subtext);">100 players × £5</td><td>£500 pool</td><td style="color:var(--gold);">Operator: £75</td></tr>
+          <tr><td style="color:var(--subtext);">500 players × £5</td><td>£2,500 pool</td><td style="color:var(--gold);">Operator: £375</td></tr>
+          <tr><td style="color:var(--subtext);">2,000 players × £5</td><td>£10,000 pool</td><td style="color:var(--gold);">Operator: £1,500</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Compliance -->
+    <div class="inv-commercial">
+      <div class="inv-section-title">Compliance & Legal</div>
+      <div class="inv-model-card">
+        <p>Skill game classification — not a fixed-odds bet. No fixed-odds exposure. 18+ on every screen. BeGambleAware.org on every screen. Designed for licensing under UK Gambling Commission skill-game frameworks and equivalent jurisdictions.</p>
+      </div>
+    </div>
+
+    <!-- Roadmap -->
+    <div class="roadmap">
+      <div class="inv-section-title">3-Phase Roadmap</div>
+
+      <div class="roadmap-phase">
+        <div class="phase-line">
+          <div class="phase-dot"></div>
+          <div>
+            <div class="phase-title">Phase 1 — MVP Launch</div>
+            <div class="phase-desc">Core game loop, 10-player tables, UK launch · Month 1–3</div>
+          </div>
+        </div>
+        <div class="phase-connector"></div>
+      </div>
+
+      <div class="roadmap-phase">
+        <div class="phase-line">
+          <div class="phase-dot p2"></div>
+          <div>
+            <div class="phase-title">Phase 2 — Growth</div>
+            <div class="phase-desc">Syndicate system, H2H rivalries, mobile app, B2B partnerships · Month 4–9</div>
+          </div>
+        </div>
+        <div class="phase-connector"></div>
+      </div>
+
+      <div class="roadmap-phase">
+        <div class="phase-line">
+          <div class="phase-dot p3"></div>
+          <div>
+            <div class="phase-title">Phase 3 — Scale</div>
+            <div class="phase-desc">Multi-race tables, season formats, international racing, data API integration · Month 10+</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Board recommendation -->
+    <div class="board-rec">
+      <div class="board-rec-label">Board Recommendation</div>
+      <div class="board-rec-text">
+        Racing Rivals has the foundations to become the definitive weekly horse racing prediction game. The core loop is proven, the commercial model is clean, the competitive landscape has real gaps, and the social and progression layer creates retention mechanics that no current racing product offers. Move to build.
+      </div>
+    </div>
+
+    <div class="compliance-footer">
+      <p><span class="age-badge">18+</span>Racing Rivals is a skill-based competition game. Not a bet.</p>
+      <p>Scores are based on official Starting Price and official race results.</p>
+      <p>Prize pool formed from player entry fees. Operator fee: 15%. Play responsibly. <a href="https://www.begambleaware.org" target="_blank">BeGambleAware.org</a></p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       BOTTOM NAV
+  ============================================================ -->
+  <nav id="bottom-nav">
+    <button class="nav-item active" id="nav-home" onclick="showScreen('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="nav-item" id="nav-pick" onclick="showScreen('pick')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      <span>Pick</span>
+    </button>
+    <button class="nav-item" id="nav-live" onclick="showScreen('live')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <div class="nav-live-dot"></div>
+      <span>Live</span>
+    </button>
+    <button class="nav-item" id="nav-leaderboard" onclick="showScreen('leaderboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="10" width="6" height="11" rx="1"/><rect x="9" y="6" width="6" height="15" rx="1"/><rect x="16" y="2" width="6" height="19" rx="1"/></svg>
+      <span>Board</span>
+    </button>
+    <button class="nav-item" id="nav-profile" onclick="showScreen('profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
+      <span>Profile</span>
+    </button>
+  </nav>
+
+  <!-- ============================================================
+       FLOATING CONTROLS
+  ============================================================ -->
+  <div id="float-controls">
+    <button class="float-btn" id="autoplay-btn" onclick="startAutoPlay()">▶ AUTO-PLAY</button>
+    <button class="float-btn" id="reset-btn" onclick="resetDemo()">↺ RESET</button>
+  </div>
+
+  <!-- Auto-play progress label -->
+  <div id="autoplay-progress"></div>
+
+  <!-- Confetti container -->
+  <div id="confetti-container"></div>
+
+</div><!-- end #app -->
+
+<script>
+/* ============================================================
+   DEMO DATA
+============================================================ */
+const horses = [
+  { id:1, name:'Silver Arrow',     jockey:'James Doyle',      trainer:'John Gosden',     form:'213',  sp:'8/1',   spVal:8 },
+  { id:2, name:'Midnight Thunder', jockey:'Oisin Murphy',     trainer:'Charlie Appleby', form:'102',  sp:'11/2',  spVal:5.5 },
+  { id:3, name:'Coastal Storm',    jockey:'Ryan Moore',       trainer:'Aidan O\'Brien',  form:'311',  sp:'9/2',   spVal:4.5 },
+  { id:4, name:'Royal Heritage',   jockey:'Frankie Dettori',  trainer:'Marco Botti',     form:'000',  sp:'16/1',  spVal:16 },
+  { id:5, name:'Emerald King',     jockey:'Silvestre Sousa',  trainer:'Mark Johnston',   form:'221',  sp:'7/1',   spVal:7 },
+  { id:6, name:'Phoenix Rise',     jockey:'Tom Marquand',     trainer:'William Haggas',  form:'134',  sp:'5/1',   spVal:5,  autoPick:true },
+  { id:7, name:'Nordic Wind',      jockey:'Billy Garritty',   trainer:'Ann Hamilton',    form:'003',  sp:'25/1',  spVal:25 },
+  { id:8, name:'Golden Braid',     jockey:'David Nolan',      trainer:'Joseph O\'Brien', form:'212',  sp:'11/1',  spVal:11 },
+];
+
+const leaderboardBefore = [
+  { rank:1, name:'Sarah M.',  tier:'Track Master',  pts:24.3, tiercls:'tier-gold',   you:false, rival:true,  bg:'#f5a623', arrow:'same',  days:[3.9,5.2,0,4.1,null,null,null], prize:'£85' },
+  { rank:2, name:'Alex D.',   tier:'Race Reader',   pts:21.8, tiercls:'tier-gold',   you:true,  rival:false, bg:'#e94560', arrow:'up',    days:[3.5,4.2,7.8,null,null,null,null], prize:'£53' },
+  { rank:3, name:'Marcus T.', tier:'Handicapper',   pts:20.1, tiercls:'tier-silver', you:false, rival:true,  bg:'#7b2fff', arrow:'same',  days:[2.6,5.1,0,6.2,null,null,null], prize:'£32' },
+  { rank:4, name:'Priya K.',  tier:'Form Student',  pts:18.4, tiercls:'tier-silver', you:false, rival:false, bg:'#00d4aa', arrow:'same',  days:[4.4,0,3.9,4.1,null,null,null], prize:'£21' },
+  { rank:5, name:'Jamie L.',  tier:'Punter',        pts:16.2, tiercls:'tier-bronze', you:false, rival:false, bg:'#cd7f32', arrow:'same',  days:[5.5,3.6,0,1.1,null,null,null], prize:'£11' },
+  { rank:6, name:'Tom R.',    tier:'Punter',        pts:14.8, tiercls:'tier-bronze', you:false, rival:false, bg:'#a0a0b0', arrow:'down',  days:[3.2,4.1,0,0,null,null,null],   prize:null },
+  { rank:7, name:'Clare W.',  tier:'Novice',        pts:11.2, tiercls:'tier-bronze', you:false, rival:false, bg:'#16a085', arrow:'up',    days:[0,5.1,3.9,0,null,null,null],   prize:null },
+  { rank:8, name:'Ben H.',    tier:'Novice',        pts:9.7,  tiercls:'tier-bronze', you:false, rival:false, bg:'#e67e22', arrow:'same',  days:[2.1,0,0,4.2,null,null,null],   prize:null },
+  { rank:9, name:'Aisha O.',  tier:'Novice',        pts:7.4,  tiercls:'tier-bronze', you:false, rival:false, bg:'#9b59b6', arrow:'down',  days:[0,3.1,0,1.2,null,null,null],   prize:null },
+  { rank:10,name:'Dan C.',    tier:'Novice',        pts:5.1,  tiercls:'tier-bronze', you:false, rival:false, bg:'#1abc9c', arrow:'same',  days:[1.2,0,0,0,null,null,null],     prize:null },
+];
+
+const leaderboardAfter = [
+  { rank:1, name:'Alex D.',   tier:'Race Reader',   pts:28.3, tiercls:'tier-gold',   you:true,  rival:false, bg:'#e94560', arrow:'up',    days:[3.5,4.2,7.8,6.5,null,null,null], prize:'£85' },
+  { rank:2, name:'Sarah M.',  tier:'Track Master',  pts:24.3, tiercls:'tier-gold',   you:false, rival:true,  bg:'#f5a623', arrow:'down',  days:[3.9,5.2,0,4.1,null,null,null], prize:'£53' },
+  { rank:3, name:'Marcus T.', tier:'Handicapper',   pts:20.1, tiercls:'tier-silver', you:false, rival:true,  bg:'#7b2fff', arrow:'same',  days:[2.6,5.1,0,6.2,null,null,null], prize:'£32' },
+  { rank:4, name:'Priya K.',  tier:'Form Student',  pts:18.4, tiercls:'tier-silver', you:false, rival:false, bg:'#00d4aa', arrow:'same',  days:[4.4,0,3.9,4.1,null,null,null], prize:'£21' },
+  { rank:5, name:'Jamie L.',  tier:'Punter',        pts:16.2, tiercls:'tier-bronze', you:false, rival:false, bg:'#cd7f32', arrow:'same',  days:[5.5,3.6,0,1.1,null,null,null], prize:'£11' },
+  { rank:6, name:'Tom R.',    tier:'Punter',        pts:14.8, tiercls:'tier-bronze', you:false, rival:false, bg:'#a0a0b0', arrow:'down',  days:[3.2,4.1,0,0,null,null,null],   prize:null },
+  { rank:7, name:'Clare W.',  tier:'Novice',        pts:11.2, tiercls:'tier-bronze', you:false, rival:false, bg:'#16a085', arrow:'up',    days:[0,5.1,3.9,0,null,null,null],   prize:null },
+  { rank:8, name:'Ben H.',    tier:'Novice',        pts:9.7,  tiercls:'tier-bronze', you:false, rival:false, bg:'#e67e22', arrow:'same',  days:[2.1,0,0,4.2,null,null,null],   prize:null },
+  { rank:9, name:'Aisha O.',  tier:'Novice',        pts:7.4,  tiercls:'tier-bronze', you:false, rival:false, bg:'#9b59b6', arrow:'down',  days:[0,3.1,0,1.2,null,null,null],   prize:null },
+  { rank:10,name:'Dan C.',    tier:'Novice',        pts:5.1,  tiercls:'tier-bronze', you:false, rival:false, bg:'#1abc9c', arrow:'same',  days:[1.2,0,0,0,null,null,null],     prize:null },
+];
+
+/* ============================================================
+   STATE
+============================================================ */
+let currentScreen = 'home';
+let selectedHorse = null;
+let lbState = 'before'; // 'before' | 'after'
+let autoPlayTimer = null;
+let autoPlayStep = 0;
+let autoPickActive = false;
+let liveRaceTimer = null;
+
+/* ============================================================
+   SCREEN NAVIGATION
+============================================================ */
+function showScreen(name) {
+  const screens = {
+    home: 'screen-home',
+    pick: 'screen-pick',
+    live: 'screen-live',
+    leaderboard: 'screen-leaderboard',
+    profile: 'screen-profile',
+    rivalry: 'screen-rivalry',
+    syndicate: 'screen-syndicate',
+    prizevault: 'screen-prizevault',
+    investor: 'screen-investor',
+  };
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById(screens[name] || 'screen-home');
+  if (target) {
+    target.classList.add('active');
+    target.scrollTop = 0;
+  }
+  currentScreen = name;
+
+  // Nav highlight
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  const navMap = { home:'nav-home', pick:'nav-pick', live:'nav-live', leaderboard:'nav-leaderboard', profile:'nav-profile', investor:'nav-leaderboard' };
+  const activeNav = document.getElementById(navMap[name]);
+  if (activeNav) activeNav.classList.add('active');
+}
+
+/* ============================================================
+   HORSE GRID RENDER
+============================================================ */
+function renderHorseGrid() {
+  const grid = document.getElementById('horse-grid');
+  grid.innerHTML = '';
+  horses.forEach(h => {
+    const isSelected = selectedHorse && selectedHorse.id === h.id;
+    const isAuto = h.autoPick && autoPickActive;
+    const formHtml = h.form.split('').map(d => {
+      const cls = d==='1'?'f1':d==='2'?'f2':d==='3'?'f3':'f0';
+      return `<span class="form-digit ${cls}" style="${d==='1'?'color:#f5a623':d==='2'?'color:#c0c0c0':d==='3'?'color:#cd7f32':'color:#a0a0b0'}">${d}</span>`;
+    }).join('');
+
+    const card = document.createElement('div');
+    card.className = 'horse-card' + (isSelected ? (isAuto?' auto-selected':' selected') : '');
+    card.onclick = () => selectHorse(h);
+
+    card.innerHTML = `
+      <div class="horse-name-row">
+        <span class="horse-name">${h.name}</span>
+        ${isAuto ? '<span class="badge badge-auto">AUTO PICK</span>' : ''}
+        <span class="horse-sp">${h.sp}</span>
+        ${isSelected ? '<div class="selected-check">✓</div>' : ''}
+      </div>
+      <div class="horse-details">
+        <div class="horse-detail"><strong>${h.jockey}</strong>Jockey</div>
+        <div class="horse-detail"><strong>${h.trainer}</strong>Trainer</div>
+        <div class="horse-detail"><strong class="horse-form">${formHtml}</strong>Form</div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function selectHorse(horse) {
+  selectedHorse = horse;
+  autoPickActive = false;
+  renderHorseGrid();
+  document.getElementById('confirm-pick-btn').disabled = false;
+}
+
+function confirmPick() {
+  if (!selectedHorse) return;
+  showScreen('live');
+  startLiveRace();
+}
+
+function triggerAutoPick() {
+  const autoHorse = horses.find(h => h.autoPick);
+  selectedHorse = autoHorse;
+  autoPickActive = true;
+  renderHorseGrid();
+  document.getElementById('confirm-pick-btn').disabled = false;
+}
+
+/* ============================================================
+   LEADERBOARD RENDER
+============================================================ */
+function renderLeaderboard(data) {
+  const list = document.getElementById('lb-list');
+  list.innerHTML = '';
+
+  const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  data.forEach((p, i) => {
+    const row = document.createElement('div');
+    const rankCls = p.rank===1?' pos-1':p.rank===2?' pos-2':p.rank===3?' pos-3':'';
+    const youCls = p.you?' you':'';
+    const rivalCls = p.rival?' rival-row':'';
+    row.className = `lb-row${rankCls}${youCls}${rivalCls}`;
+    row.onclick = () => toggleLbDetail(row);
+
+    const rankColor = p.rank===1?'r1':p.rank===2?'r2':p.rank===3?'r3':'';
+    const arrowHtml = p.arrow==='up'
+      ? '<span class="lb-arrow up">▲</span>'
+      : p.arrow==='down'
+      ? '<span class="lb-arrow down">▼</span>'
+      : '<span class="lb-arrow same">—</span>';
+
+    const dayScores = p.days.map((d, idx) => {
+      if (d === null) return `<span class="lb-day-score">${dayNames[idx]}: —</span>`;
+      if (d === 0) return `<span class="lb-day-score">${dayNames[idx]}: 0</span>`;
+      return `<span class="lb-day-score ${d>4?'win':'place'}">${dayNames[idx]}: +${d}</span>`;
+    }).join('');
+
+    const prizeHtml = p.prize ? `<div class="lb-prize">${p.prize}</div>` : '';
+    const rivalBadge = p.rival ? '<span class="badge badge-rivalry" style="font-size:0.55rem;padding:1px 5px;margin-left:4px;">RIVAL</span>' : '';
+    const youBadge = p.you ? '<span class="badge badge-accent" style="font-size:0.55rem;padding:1px 5px;margin-left:4px;">YOU</span>' : '';
+
+    row.innerHTML = `
+      <div class="lb-rank ${rankColor}">${p.rank}</div>
+      <div class="lb-avatar" style="background:${p.bg}20;color:${p.bg};border:1px solid ${p.bg}40;">${p.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</div>
+      <div class="lb-info">
+        <div class="lb-name">${p.name}${youBadge}${rivalBadge}</div>
+        <div class="lb-tier ${p.tiercls}">${p.tier}</div>
+        <div class="lb-detail" id="detail-${i}">${dayScores}</div>
+      </div>
+      <div>
+        <div class="lb-pts">${p.pts}</div>
+        ${prizeHtml}
+      </div>
+      ${arrowHtml}
+    `;
+    list.appendChild(row);
+  });
+}
+
+function toggleLbDetail(row) {
+  const detail = row.querySelector('.lb-detail');
+  if (detail) detail.classList.toggle('show');
+}
+
+/* ============================================================
+   LIVE RACE SIMULATION
+============================================================ */
+const commentaryLines = [
+  "Good break from the stalls — tracking the pace in 3rd...",
+  "Moving smoothly through the field — settling in 3rd after the first bend...",
+  "Picking up nicely — moved into contention, 2nd approaching the straight...",
+  "Strong push on the outside — challenging the leader, 2nd turning for home!",
+  "Charging hard — head to head in the final two furlongs!",
+  "Clear in front — pulling away! Phoenix Rise wins it!"
+];
+
+let commentaryIndex = 0;
+let liveAnimId = null;
+
+function startLiveRace() {
+  // Reset
+  commentaryIndex = 0;
+  document.getElementById('commentary-lines').innerHTML = `<div class="commentary-line">${commentaryLines[0]}</div>`;
+  document.getElementById('result-reveal').classList.remove('show');
+  document.getElementById('live-position').textContent = '3rd';
+  document.getElementById('live-of').textContent = 'of 8 runners';
+  document.getElementById('horse-marker').style.left = '5%';
+
+  const positions = ['3rd','3rd','2nd','2nd','1st','1st'];
+  const markerPositions = [15, 28, 42, 58, 72, 88];
+
+  let step = 0;
+  if (liveRaceTimer) clearInterval(liveRaceTimer);
+
+  liveRaceTimer = setInterval(() => {
+    step++;
+    if (step >= commentaryLines.length) {
+      clearInterval(liveRaceTimer);
+      showRaceResult();
+      return;
+    }
+    addCommentary(commentaryLines[step]);
+    document.getElementById('live-position').textContent = positions[step] || '1st';
+    document.getElementById('horse-marker').style.left = markerPositions[step] + '%';
+  }, 1500);
+}
+
+function addCommentary(text) {
+  const container = document.getElementById('commentary-lines');
+  const line = document.createElement('div');
+  line.className = 'commentary-line';
+  line.textContent = text;
+  container.appendChild(line);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showRaceResult() {
+  const reveal = document.getElementById('result-reveal');
+  reveal.classList.add('show');
+  document.getElementById('result-outcome').textContent = 'WIN!';
+  document.getElementById('result-pts').innerHTML = '5/1 × 1.3× (Thursday) = <strong style="color:var(--gold);font-family:\'Orbitron\',sans-serif">6.5 pts</strong>';
+  document.getElementById('result-move').textContent = 'You moved from 2nd to 1st place!';
+
+  triggerConfetti();
+  lbState = 'after';
+
+  // Update home widget
+  document.getElementById('home-score').textContent = '28.3';
+  document.getElementById('home-pos-label').textContent = '1st place — 1st prize: £85!';
+  document.getElementById('home-pos').innerHTML = '1<sup style="font-size:0.5em">st</sup>';
+  document.getElementById('home-arrow').textContent = '▲ just moved up!';
+  renderLeaderboard(leaderboardAfter);
+}
+
+/* ============================================================
+   CONFETTI
+============================================================ */
+function triggerConfetti() {
+  const container = document.getElementById('confetti-container');
+  container.innerHTML = '';
+  const colors = ['#f5a623','#e94560','#00d4aa','#7b2fff','#ffffff','#ff6b9d','#ffd700'];
+
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const left = Math.random() * 100;
+    const delay = Math.random() * 1.5;
+    const duration = 1.5 + Math.random() * 2;
+    const size = 5 + Math.random() * 8;
+    piece.style.cssText = `
+      left:${left}%;
+      top:-10px;
+      background:${color};
+      width:${size}px;
+      height:${size}px;
+      animation-duration:${duration}s;
+      animation-delay:${delay}s;
+      border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
+    `;
+    container.appendChild(piece);
+  }
+
+  setTimeout(() => { container.innerHTML = ''; }, 5000);
+}
+
+/* ============================================================
+   EXPANDABLE
+============================================================ */
+function toggleExpand(header) {
+  const body = header.nextElementSibling;
+  const icon = header.querySelector('.expand-icon');
+  body.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+
+/* ============================================================
+   COUNTDOWN TIMER
+============================================================ */
+function startCountdown() {
+  let totalSecs = 9240; // 2h34m
+  const el = document.getElementById('countdown');
+  function tick() {
+    if (totalSecs <= 0) return;
+    const h = Math.floor(totalSecs / 3600);
+    const m = Math.floor((totalSecs % 3600) / 60);
+    const s = totalSecs % 60;
+    const label = h > 0
+      ? `Picks close in ${h}h ${m}m`
+      : `Picks close in ${m}m ${s.toString().padStart(2,'0')}s`;
+    if (el) el.textContent = label;
+    totalSecs--;
+    setTimeout(tick, 1000);
+  }
+  tick();
+}
+
+/* ============================================================
+   AUTO-PLAY — 12 STEPS
+============================================================ */
+const autoPlaySteps = [
+  // Step 1: 0–4s — Home visible
+  { time: 0,    action: () => {
+    showScreen('home');
+    setProgress('Step 1/12 — Home Screen', 1);
+    highlight('join-cta', true);
+  }},
+  // Step 2: 4–7s — Join Table button pulses
+  { time: 4000, action: () => {
+    setProgress('Step 2/12 — Joining table...', 2);
+    highlight('join-cta', false);
+    pulse('join-cta');
+  }},
+  // Step 3: 7–12s — Navigate to Pick screen
+  { time: 7000, action: () => {
+    setProgress('Step 3/12 — Today\'s Race Card', 3);
+    selectedHorse = null;
+    autoPickActive = false;
+    renderHorseGrid();
+    showScreen('pick');
+  }},
+  // Step 4: 12–16s — Horse selection highlight
+  { time: 12000, action: () => {
+    setProgress('Step 4/12 — Horse Selection', 4);
+    selectHorse(horses[0]); // Silver Arrow
+  }},
+  // Step 5: 16–19s — Auto-pick demo
+  { time: 16000, action: () => {
+    setProgress('Step 5/12 — Auto-Pick Demo', 5);
+    autoPickActive = true;
+    selectedHorse = horses[5]; // Phoenix Rise
+    renderHorseGrid();
+    document.getElementById('confirm-pick-btn').disabled = false;
+  }},
+  // Step 6: 19–27s — Live Tracker
+  { time: 19000, action: () => {
+    setProgress('Step 6/12 — Live Race Tracker', 6);
+    showScreen('live');
+    // Reset and start fresh animation
+    commentaryIndex = 0;
+    document.getElementById('commentary-lines').innerHTML = `<div class="commentary-line">${commentaryLines[0]}</div>`;
+    document.getElementById('result-reveal').classList.remove('show');
+    document.getElementById('live-position').textContent = '3rd';
+    document.getElementById('horse-marker').style.left = '5%';
+
+    let s = 0;
+    const steps2 = ['3rd','3rd','2nd','1st'];
+    const markers2 = [20, 40, 65, 88];
+    const comms2 = [commentaryLines[1], commentaryLines[2], commentaryLines[3]];
+
+    const t = setInterval(() => {
+      s++;
+      if (s <= comms2.length) addCommentary(comms2[s-1]);
+      if (steps2[s]) document.getElementById('live-position').textContent = steps2[s];
+      if (markers2[s]) document.getElementById('horse-marker').style.left = markers2[s] + '%';
+      if (s >= 3) clearInterval(t);
+    }, 1800);
+  }},
+  // Step 7: 27–35s — Race result + confetti
+  { time: 27000, action: () => {
+    setProgress('Step 7/12 — WIN! Race Result', 7);
+    addCommentary(commentaryLines[5]);
+    document.getElementById('horse-marker').style.left = '88%';
+    document.getElementById('live-position').textContent = '1st';
+    setTimeout(() => {
+      showRaceResult();
+    }, 500);
+  }},
+  // Step 8: 35–38s — Leaderboard position change
+  { time: 35000, action: () => {
+    setProgress('Step 8/12 — Points Update', 8);
+    lbState = 'after';
+    renderLeaderboard(leaderboardAfter);
+    showScreen('leaderboard');
+  }},
+  // Step 9: 38–42s — Full leaderboard
+  { time: 38000, action: () => {
+    setProgress('Step 9/12 — Full Leaderboard', 9);
+    // Already on leaderboard screen
+  }},
+  // Step 10: 42–47s — Rivalry screen
+  { time: 42000, action: () => {
+    setProgress('Step 10/12 — Rivalry Screen', 10);
+    showScreen('rivalry');
+  }},
+  // Step 11: 47–52s — Investor view
+  { time: 47000, action: () => {
+    setProgress('Step 11/12 — Investor Board View', 11);
+    showScreen('investor');
+  }},
+  // Step 12: 52–54s — Reset home
+  { time: 52000, action: () => {
+    setProgress('Step 12/12 — Pick Smart. Beat the Field.', 12);
+    showScreen('home');
+    setTimeout(() => {
+      document.getElementById('autoplay-progress').classList.remove('show');
+      document.getElementById('autoplay-btn').classList.remove('playing');
+      document.getElementById('autoplay-btn').textContent = '▶ AUTO-PLAY';
+      autoPlayTimer = null;
+    }, 2000);
+  }},
+];
+
+function setProgress(label, step) {
+  const el = document.getElementById('autoplay-progress');
+  el.classList.add('show');
+  el.textContent = label + ` · ${step}/12`;
+}
+
+function highlight(id, on) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (on) el.style.boxShadow = '0 0 0 3px rgba(233,69,96,0.7)';
+  else el.style.boxShadow = '';
+}
+
+function pulse(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.transform = 'scale(1.04)';
+  setTimeout(() => el.style.transform = '', 600);
+}
+
+function startAutoPlay() {
+  if (autoPlayTimer) {
+    clearAllAutoPlayTimers();
+    resetDemo();
+    return;
+  }
+
+  // Reset state
+  lbState = 'before';
+  renderLeaderboard(leaderboardBefore);
+  document.getElementById('home-score').textContent = '21.8';
+  document.getElementById('home-pos-label').textContent = '2nd place — in the prizes';
+  document.getElementById('home-pos').innerHTML = '2<sup style="font-size:0.5em">nd</sup>';
+  document.getElementById('home-arrow').textContent = '▲ moved up';
+
+  document.getElementById('autoplay-btn').classList.add('playing');
+  document.getElementById('autoplay-btn').textContent = '■ STOP';
+
+  const timers = [];
+  autoPlaySteps.forEach(step => {
+    const t = setTimeout(step.action, step.time);
+    timers.push(t);
+  });
+  autoPlayTimer = timers;
+}
+
+function clearAllAutoPlayTimers() {
+  if (autoPlayTimer && Array.isArray(autoPlayTimer)) {
+    autoPlayTimer.forEach(t => clearTimeout(t));
+  }
+  autoPlayTimer = null;
+  if (liveRaceTimer) { clearInterval(liveRaceTimer); liveRaceTimer = null; }
+}
+
+function resetDemo() {
+  clearAllAutoPlayTimers();
+  document.getElementById('autoplay-btn').classList.remove('playing');
+  document.getElementById('autoplay-btn').textContent = '▶ AUTO-PLAY';
+  document.getElementById('autoplay-progress').classList.remove('show');
+
+  // Reset UI
+  selectedHorse = null;
+  autoPickActive = false;
+  lbState = 'before';
+
+  document.getElementById('home-score').textContent = '21.8';
+  document.getElementById('home-pos-label').textContent = '2nd place — in the prizes';
+  document.getElementById('home-pos').innerHTML = '2<sup style="font-size:0.5em">nd</sup>';
+  document.getElementById('home-arrow').textContent = '▲ moved up';
+  document.getElementById('confetti-container').innerHTML = '';
+  document.getElementById('commentary-lines').innerHTML = `<div class="commentary-line">Good break from the stalls — tracking the pace in 3rd...</div>`;
+  document.getElementById('result-reveal').classList.remove('show');
+  document.getElementById('horse-marker').style.left = '5%';
+  document.getElementById('confirm-pick-btn').disabled = true;
+
+  renderHorseGrid();
+  renderLeaderboard(leaderboardBefore);
+  showScreen('home');
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+function init() {
+  renderHorseGrid();
+  renderLeaderboard(leaderboardBefore);
+  startCountdown();
+  showScreen('home');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
