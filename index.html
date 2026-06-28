@@ -35,6 +35,8 @@ html, body {
   color: var(--text);
   overflow: hidden;
   font-size: 16px;
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
 }
 
 /* ============================================================
@@ -2456,7 +2458,16 @@ function init() {
   showScreen('home');
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// Bulletproof init - fires on DOMContentLoaded or immediately if already loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+window.addEventListener('load', function() {
+  // Fallback - ensure init ran
+  if (currentScreen === 'home') renderLeaderboard(leaderboardBefore);
+});
 </script>
 </body>
 </html>
