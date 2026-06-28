@@ -65,7 +65,9 @@ html, body {
 ============================================================ */
 .screen {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   bottom: 70px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -76,11 +78,12 @@ html, body {
   padding-bottom: 12px;
   scrollbar-width: thin;
   scrollbar-color: rgba(233,69,96,0.3) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 .screen.active {
-  opacity: 1;
-  pointer-events: all;
-  transform: translateX(0);
+  opacity: 1 !important;
+  pointer-events: all !important;
+  transform: translateX(0) !important;
 }
 
 /* ============================================================
@@ -1071,7 +1074,7 @@ html, body {
   <!-- ============================================================
        SCREEN 1: HOME
   ============================================================ -->
-  <div id="screen-home" class="screen active">
+  <div id="screen-home" class="screen active" style="opacity:1;transform:translateX(0);pointer-events:all;">
 
     <!-- Hero -->
     <div class="home-hero">
