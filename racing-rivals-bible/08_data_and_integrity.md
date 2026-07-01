@@ -40,7 +40,7 @@ forge a score · set own standings/rank · forge a race result · call the scori
 
 - **profiles** 🟦 — extends `auth.users`; UKGC compliance flags (`age_verified`, `kyc_status`, `country`) written only by trusted server functions.
 - **festivals → meetings → races → runners** 🟥 — racing data; fractional SP (num/den) with a generated decimal-odds column; one-favourite-per-race index.
-- **leagues** 🟦 — `mode` enum (day/festival/season) with window CHECKs; `max_runners` default 20.
+- **leagues** 🟦 — `mode` enum (day/festival/season) with window CHECKs; `name` (required); `max_runners` default 10, partner-configurable (CHECK 2–100, see migration 09). Each league has its own per-league leaderboard (`standings` keyed by `league_id`).
 - **league_members** 🟦, **picks** 🟦 (unique league/profile/pick_date, FK to runner).
 - **race_results** 🟥 (unique race/finish_pos).
 - **daily_scores** 🟦 — the v2 breakdown with the total = base+fav+streak CHECK.
