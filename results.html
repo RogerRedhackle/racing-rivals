@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Racing Rivals — Results & Scoring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700;8..60,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F0E6; --card:#F8F5EC; --ink:#1A1814; --stamp:#C0241F; --stamp-2:#a91d18;
+  --ink-80:rgba(26,24,20,.80); --ink-60:rgba(26,24,20,.62); --ink-40:rgba(26,24,20,.46);
+  --ink-15:rgba(26,24,20,.15); --ink-08:rgba(26,24,20,.08); --hair:rgba(26,24,20,.22);
+  --win:#1f7a3d; --place:#9a6b00; --gold:#caa53d;
+  --serif:"Source Serif 4",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+html.dark{
+  --paper:#14120F; --card:#1C1A15; --ink:#EDE8DB; --stamp:#e0473f; --stamp-2:#C0241F;
+  --ink-80:rgba(237,232,219,.82); --ink-60:rgba(237,232,219,.66); --ink-40:rgba(237,232,219,.5);
+  --ink-15:rgba(237,232,219,.14); --ink-08:rgba(237,232,219,.07); --hair:rgba(237,232,219,.20);
+  --win:#4fc878; --place:#d9a637; --gold:#e0bb52;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#0a0908;color:var(--ink);min-height:100vh;display:flex;justify-content:center}
+.app{width:100%;max-width:430px;min-height:100vh;background:var(--paper);position:relative;display:flex;flex-direction:column;height:100vh}
+.serif{font-family:var(--serif)}.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.topbar{flex-shrink:0;background:var(--paper);border-bottom:2px solid var(--ink);padding:11px 16px;display:flex;align-items:center;justify-content:space-between}
+.tb-logo{font-family:var(--serif);font-weight:900;font-size:17px}.tb-logo em{font-style:normal;color:var(--stamp)}
+.themetog{background:none;border:1px solid var(--hair);border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:14px;color:var(--ink)}
+.scroll{flex:1;overflow-y:auto;padding:18px 16px 20px}
+
+.kicker{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--stamp);margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.livebadge{font-family:var(--mono);font-size:8.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--paper);background:var(--stamp);padding:2px 7px;border-radius:4px}
+.section-h{font-family:var(--serif);font-size:23px;font-weight:900;line-height:1.05;margin-bottom:3px}
+.section-sub{font-size:13px;color:var(--ink-60);margin-bottom:14px;line-height:1.45}
+
+/* live states (loading / empty / footer) */
+.rl-skel{padding:40px 10px;text-align:center;color:var(--ink-40);font-family:var(--mono);font-size:12px}
+.rl-empty{padding:52px 24px;text-align:center}
+.rl-empty-t{font-family:var(--serif);font-weight:900;font-size:20px;margin-bottom:6px}
+.rl-empty-s{font-size:13px;color:var(--ink-60);line-height:1.5}
+.rl-foot{font-size:9px;color:var(--ink-40);text-align:center;margin-top:16px;letter-spacing:.3px}
+.demo-note{font-family:var(--mono);font-size:9px;color:var(--ink-40);text-align:center;margin-bottom:14px;letter-spacing:.3px}
+
+/* week summary strip */
+.weekbar{display:flex;gap:7px;margin-bottom:16px}
+.daycell{flex:1;text-align:center;background:var(--card);border:1px solid var(--hair);border-radius:7px;padding:7px 3px}
+.daycell .dl{font-family:var(--mono);font-size:8px;color:var(--ink-40);text-transform:uppercase;letter-spacing:.5px}
+.daycell .dp{font-family:var(--mono);font-size:12px;font-weight:800;margin-top:2px}
+.daycell.win{border-color:var(--win)}.daycell.win .dp{color:var(--win)}
+.daycell.plc{border-color:var(--place)}.daycell.plc .dp{color:var(--place)}
+.daycell.miss .dp{color:var(--ink-40)}
+.daycell.void{border-color:var(--hair)}.daycell.void .dp{color:var(--ink-40)}
+.daycell.today{border-color:var(--stamp);border-style:dashed}.daycell.today .dp{color:var(--stamp);font-size:9px}
+.daycell .ds{font-size:11px;margin-top:1px}
+
+/* total banner */
+.totbanner{background:var(--ink);color:var(--paper);border-radius:11px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+.totbanner .tl{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6}
+.totbanner .tv{font-family:var(--serif);font-weight:900;font-size:30px;line-height:1}
+.totbanner .tr{text-align:right;font-family:var(--mono);font-size:11px;opacity:.85}
+.totbanner .tr b{color:#ffd23f}
+
+.daydivide{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink-40);margin:0 0 9px;display:flex;align-items:center;gap:9px}
+.daydivide::after{content:"";flex:1;height:1px;background:var(--hair)}
+
+/* result card */
+.rescard{background:var(--card);border:1px solid var(--hair);border-radius:10px;padding:0;margin-bottom:12px;overflow:hidden}
+.rescard.win{border-left:3px solid var(--win)}
+.rescard.plc{border-left:3px solid var(--place)}
+.rescard.miss{border-left:3px solid var(--ink-40)}
+.rescard.void{border-left:3px solid var(--hair)}
+.rc-head{display:flex;align-items:center;gap:11px;padding:12px 13px}
+.silk{width:34px;height:34px;border-radius:5px;flex-shrink:0;font-family:var(--mono);font-weight:800;font-size:12px;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.25)}
+.rc-mid{flex:1;min-width:0}
+.rc-name{font-family:var(--serif);font-weight:700;font-size:15px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.rc-sub{font-family:var(--mono);font-size:10.5px;color:var(--ink-60);margin-top:2px}
+.outcome{font-family:var(--mono);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:4px;color:#fff}
+.outcome.win{background:var(--win)}.outcome.plc{background:var(--place)}.outcome.miss{background:var(--ink-40)}.outcome.void{background:var(--ink-40)}
+.rc-pts{text-align:right;flex-shrink:0}
+.rc-pts .big{font-family:var(--mono);font-weight:800;font-size:22px;line-height:1}
+.rc-pts.win .big{color:var(--win)}.rc-pts.plc .big{color:var(--place)}.rc-pts.miss .big{color:var(--ink-40)}.rc-pts.void .big{color:var(--ink-40)}
+.rc-pts .lbl{font-family:var(--mono);font-size:8px;color:var(--ink-40);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* SCORING BREAKDOWN — the "secret sauce" */
+.breakdown{border-top:1px dashed var(--hair);padding:11px 13px;background:var(--ink-08)}
+.bd-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:3px 0}
+.bd-row .bl{color:var(--ink-80);display:flex;align-items:center;gap:6px}
+.bd-row .bv{font-family:var(--mono);font-weight:700}
+.bd-row .bv.pos{color:var(--win)}
+.bd-tag{font-family:var(--mono);font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:1px 5px;border-radius:3px;border:1px solid}
+.bd-tag.fav{color:var(--stamp);border-color:var(--stamp)}
+.bd-tag.streak{color:var(--place);border-color:var(--place)}
+.bd-base .bl{color:var(--ink-60)}
+.bd-total{border-top:1px solid var(--hair);margin-top:6px;padding-top:8px}
+.bd-total .bl{font-family:var(--serif);font-weight:800;font-size:14px;color:var(--ink)}
+.bd-total .bv{font-family:var(--mono);font-weight:800;font-size:17px}
+.bd-total.win .bv{color:var(--win)}.bd-total.plc .bv{color:var(--place)}
+.bd-formula{font-family:var(--mono);font-size:9.5px;color:var(--ink-40);margin-top:7px;line-height:1.5}
+.bd-miss{font-family:var(--serif);font-style:italic;font-size:12.5px;color:var(--ink-60);padding:2px 0}
+
+/* scoring explainer (collapsible) */
+.explainer{background:var(--card);border:1px solid var(--ink);border-radius:10px;margin-bottom:18px;overflow:hidden}
+.ex-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer}
+.ex-head .eh{font-family:var(--serif);font-weight:800;font-size:14px;display:flex;align-items:center;gap:7px}
+.ex-head .ei{font-family:var(--mono);font-size:10px;color:var(--ink-40)}
+.ex-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.explainer.open .ex-body{max-height:420px}
+.ex-in{padding:0 14px 14px;font-size:12.5px;color:var(--ink-80);line-height:1.55}
+.ex-item{display:flex;gap:9px;padding:8px 0;border-top:1px solid var(--hair)}
+.ex-item .en{font-family:var(--mono);font-size:9px;font-weight:800;color:var(--paper);background:var(--ink);width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ex-item b{font-family:var(--serif)}
+.ex-eg{font-family:var(--mono);font-size:10.5px;color:var(--stamp);margin-top:3px}
+
+/* bottom nav */
+.botnav{flex-shrink:0;display:flex;border-top:2px solid var(--ink);background:var(--paper)}
+.botnav button{flex:1;background:none;border:0;padding:9px 4px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-40);font-family:var(--sans)}
+.botnav button .ni{font-size:18px;line-height:1}
+.botnav button .nl{font-size:9.5px;font-weight:700;letter-spacing:.3px}
+.botnav button.on{color:var(--stamp)}
+.botnav button.on .nl{color:var(--ink)}
+
+/* stub view */
+.stub{padding:60px 24px;text-align:center}
+.stub .si{font-size:40px;margin-bottom:14px}
+.stub .st{font-family:var(--serif);font-weight:900;font-size:20px;margin-bottom:6px}
+.stub .ss{font-size:13px;color:var(--ink-60);line-height:1.5}
+.stub .tbd{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--place);border:1px solid var(--place);border-radius:5px;padding:3px 9px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="tb-logo serif">Racing<em>Rivals</em></div>
+    <button class="themetog" onclick="toggleTheme()" id="ttog">🌙</button>
+  </div>
+
+  <div class="scroll" id="scroll"></div>
+
+  <!-- BOTTOM NAV -->
+  <div class="botnav">
+    <button id="nav-today" onclick="location.href='today.html'"><span class="ni">⏱</span><span class="nl">Today</span></button>
+    <button id="nav-results" class="on" onclick="go('results')"><span class="ni">🏁</span><span class="nl">Results</span></button>
+    <button id="nav-league" onclick="location.href='leaderboard.html'"><span class="ni">📊</span><span class="nl">League</span></button>
+    <button id="nav-chat" onclick="go('chat')"><span class="ni">💬</span><span class="nl">Chat</span></button>
+  </div>
+</div>
+
+<!-- Auth guard: results.html reads member-gated daily_scores (RLS:
+     scores_read using is_member(league_id)). A session is required for the live
+     breakdown, so when Supabase is configured an unauthenticated visitor is
+     redirected to sign-in. When NOT configured (offline static preview) the
+     guard stands down and the hardcoded demo breakdown renders. -->
+<script type="module">
+  import { isConfigured } from './lib/config.js';
+  window.__RR_LIVE__ = false;
+  if (isConfigured()) {
+    const { guardRoute } = await import('./lib/session.js');
+    const user = await guardRoute();
+    if (user) {
+      window.__RR_LIVE__ = true;
+      await import('./lib/results-live.js');
+    }
+  } else {
+    console.warn('[RacingRivals] Supabase not configured — auth guard stood down for static demo.');
+  }
+</script>
+
+<script>
+function toggleTheme(){ const h=document.documentElement; h.classList.toggle('dark'); document.getElementById('ttog').textContent=h.classList.contains('dark')?'☀️':'🌙'; }
+
+/* ===== LOCKED SCORING MODEL (updated 30 Jun 2026 — fractional base + flat bonuses) =====
+   Win base   = fractional odds as a number: 9/1=9, 8/1=8, 7/2=3.5, evens=1, 28/1=28.
+   Place base = half the win base.
+   Loss = 0 (resets streak).
+   Bonuses (FLAT, stack on base, no cap):
+     Beat-the-favourite: non-fav that WON or PLACED → +2 flat.
+     Win streak: each consecutive WINNING day from day 2 → +1 flat. Wins only —
+                 a place scores but does NOT build or extend a streak.
+   Numbers shown to 1 dp; .0 trimmed.
+   ===== */
+const PLACE_FRAC=0.5, FAV_FLAT=2, STREAK_FLAT=1;
+const fracVal=sp=>{ if(/even/i.test(sp))return 1; const m=sp.split('/'); return (+m[0])/(+m[1]); };
+const r1=n=>Math.round(n*10)/10;
+const show=n=>{ const v=r1(n); return Number.isInteger(v)?String(v):v.toFixed(1); };
+const baseWin=sp=>r1(fracVal(sp));
+const basePlace=sp=>r1(fracVal(sp)*PLACE_FRAC);
+
+// compute a scored pick with full breakdown
+// winStreakDays = consecutive WINNING days including this pick (1 = first win)
+function score(pick){
+  let base=0, kind=pick.outcome;
+  if(kind==='win') base=baseWin(pick.sp);
+  else if(kind==='plc') base=basePlace(pick.sp);
+  else return {kind:'miss', base:0, total:0, lines:[]};
+  const lines=[];
+  let running=base;
+  lines.push({l:(kind==='win'?'Win':'Place')+` · ${pick.sp}`, v:'+'+show(base), base:true});
+  // fav-beater: WIN ONLY (a place does not earn it — prevents short-priced place-farming)
+  if(!pick.wasFav && kind==='win'){
+    running+=FAV_FLAT;
+    lines.push({l:'Beat the favourite', tag:'fav', v:'+'+FAV_FLAT});
+  }
+  if(kind==='win' && pick.winStreakDays>=2){
+    const add=STREAK_FLAT*(pick.winStreakDays-1);
+    running+=add;
+    lines.push({l:`Win streak · day ${pick.winStreakDays}`, tag:'streak', v:'+'+add});
+  }
+  return {kind, base, total:r1(running), lines};
+}
+
+/* ===== Roger's 7-day week (real Royal Hunt Cup as Day 4) ===== */
+const WEEK=[
+  {day:1, label:'MON', horse:'Lunar Spence', sp:'7/2', meeting:'Newcastle 2:10', outcome:'win', wasFav:true, winStreakDays:1, finish:'1st of 9'},
+  {day:2, label:'TUE', horse:'Kalooki', sp:'11/2', meeting:'Brighton 4:05', outcome:'plc', wasFav:false, winStreakDays:0, finish:'3rd of 11'},
+  {day:3, label:'WED', horse:'Tin Hat', sp:'9/1', meeting:'Carlisle 3:30', outcome:'miss', wasFav:false, winStreakDays:0, finish:'7th of 12'},
+  {day:4, label:'THU', horse:'Indalo', sp:'9/1', meeting:'Royal Ascot 5:00 · Royal Hunt Cup', outcome:'plc', wasFav:false, winStreakDays:0, finish:'3rd of 28', today:false, real:true},
+  {day:5, label:'FRI', future:true},
+  {day:6, label:'SAT', future:true},
+  {day:7, label:'SUN', future:true},
+];
+const silk={ 'Lunar Spence':['#1b6e3a','#ffd23f'], 'Kalooki':['#b3122b','#0a0a0a'], 'Tin Hat':['#1e4fff','#ffffff'], 'Indalo':['#1e4fff','#ffffff'] };
+
+function ptOf(p){ if(p.future) return null; return score(p).total; }
+
+function renderDemo(){
+  // compute totals
+  let total=0; WEEK.forEach(p=>{ if(!p.future) total+=ptOf(p); });
+  const settled=WEEK.filter(p=>!p.future);
+
+  // week strip
+  const strip=WEEK.map(p=>{
+    if(p.future) return `<div class="daycell today"><div class="dl">${p.label}</div><div class="dp">TO&nbsp;COME</div></div>`;
+    const pts=ptOf(p);
+    const cls=p.outcome==='win'?'win':p.outcome==='plc'?'plc':'miss';
+    const sym=p.outcome==='win'?'🥇':p.outcome==='plc'?'●':'–';
+    return `<div class="daycell ${cls}"><div class="dl">${p.label}</div><div class="dp">${pts?'+'+show(pts):'0'}</div><div class="ds">${sym}</div></div>`;
+  }).join('');
+
+  // result cards (most recent first)
+  const cards=[...settled].reverse().map(p=>{
+    const s=score(p);
+    const cls=p.outcome;
+    const sk=silk[p.horse]||['#555','#999'];
+    const outLbl=p.outcome==='win'?'WON':p.outcome==='plc'?'PLACED':'UNPLACED';
+    let bd;
+    if(p.outcome==='miss'){
+      bd=`<div class="breakdown"><div class="bd-miss">Finished ${p.finish}. No points — win or place only. Your streak resets.</div></div>`;
+    } else {
+      const rows=s.lines.map(ln=>`<div class="bd-row ${ln.base?'bd-base':''}">
+        <span class="bl">${ln.tag?`<span class="bd-tag ${ln.tag}">${ln.tag==='fav'?'FAV-BEATER':'STREAK'}</span>`:''}${ln.l}</span>
+        <span class="bv ${ln.base?'':'pos'}">${ln.v}</span></div>`).join('');
+      const formulaBits=[];
+      formulaBits.push(`${p.outcome==='win'?'win':'place'} base = ${show(s.base)}`);
+      if(!p.wasFav && p.outcome==='win') formulaBits.push(`+${FAV_FLAT} fav-beater`);
+      if(p.outcome==='win' && p.winStreakDays>=2) formulaBits.push(`+${STREAK_FLAT*(p.winStreakDays-1)} streak`);
+      bd=`<div class="breakdown">${rows}
+        <div class="bd-row bd-total ${p.outcome}"><span class="bl">Day total</span><span class="bv">+${s.total}</span></div>
+        <div class="bd-formula">${formulaBits.join('  ·  ')}</div></div>`;
+    }
+    return `<div class="rescard ${cls}">
+      <div class="rc-head">
+        <div class="silk" style="background:linear-gradient(135deg,${sk[0]} 50%,${sk[1]} 50%)">${p.horse[0]}</div>
+        <div class="rc-mid">
+          <div class="rc-name serif">${p.horse} <span class="outcome ${cls}">${outLbl}</span></div>
+          <div class="rc-sub">${p.meeting} · ${p.sp} · ${p.finish}</div>
+        </div>
+        <div class="rc-pts ${cls}"><div class="big">${p.outcome==='miss'?'0':'+'+s.total}</div><div class="lbl">pts</div></div>
+      </div>
+      ${bd}
+    </div>`;
+  }).join('');
+
+  document.getElementById('scroll').innerHTML=`
+    <div class="demo-note">STATIC PROTOTYPE · not connected — live breakdown loads when signed in</div>
+    <div class="kicker">Results <span class="livebadge">Demo</span></div>
+    <h2 class="section-h serif">Your week</h2>
+    <div class="section-sub">Every pick, every result — and exactly where the points came from. No hidden maths.</div>
+
+    <div class="weekbar">${strip}</div>
+
+    <div class="totbanner">
+      <div><div class="tl">Your total · week 1</div><div class="tv mono">${show(total)}</div></div>
+      <div class="tr">4th in <b>The Paddock</b><br>6.2 pts off the lead</div>
+    </div>
+
+    <!-- SCORING EXPLAINER -->
+    <div class="explainer" id="explainer">
+      <div class="ex-head" onclick="document.getElementById('explainer').classList.toggle('open')">
+        <div class="eh serif">🧮 How points work</div>
+        <div class="ei">tap ⌄</div>
+      </div>
+      <div class="ex-body"><div class="ex-in">
+        <div class="ex-item"><span class="en">1</span><div><b>Win</b> = your horse's price as a number. A 9/1 winner = <b>9 pts</b>, evens = <b>1</b>, 28/1 = <b>28</b>. The bigger the price, the bigger the points.<div class="ex-eg">evens → 1 · 7/2 → 3.5 · 9/1 → 9 · 28/1 → 28</div></div></div>
+        <div class="ex-item"><span class="en">2</span><div><b>Place</b> (top finish, didn't win) = <b>half</b> the win value. A 9/1 placed = <b>4.5 pts</b>. A near-miss still scores.</div></div>
+        <div class="ex-item"><span class="en">3</span><div><b>Beat the favourite</b> — if your pick wasn't the market favourite and it <b>wins</b>, <b>+2</b>. Reward for backing a winner over the chalk. <span class="ex-eg">A place doesn't earn it — only a win.</span></div></div>
+        <div class="ex-item"><span class="en">4</span><div><b>Win streak</b> — win on consecutive days and earn <b>+1 per extra day</b> (day 2 = +1, day 3 = +2…). Only wins build a streak; a place or blank day resets it.</div></div>
+        <div class="ex-item"><span class="en">5</span><div>No cap. A miss scores <b>0</b>. Every result shows the full breakdown — the maths is always open.</div></div>
+      </div></div>
+    </div>
+
+    <div class="daydivide">Day by day</div>
+    ${cards}
+  `;
+}
+
+const STUBS={
+  chat:{i:'💬',t:'League chat',s:'Talk to the other runners in your league as the week unfolds. Scope and moderation to be decided.',tbd:'TBD'},
+};
+function renderStub(v){
+  const s=STUBS[v];
+  document.getElementById('scroll').innerHTML=`<div class="stub"><div class="si">${s.i}</div><div class="st serif">${s.t}</div><div class="ss">${s.s}</div><div class="tbd">${s.tbd}</div></div>`;
+}
+
+function go(v){
+  document.querySelectorAll('.botnav button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('nav-'+v).classList.add('on');
+  if(v==='results'){ if(window.__RR_LIVE__){ window.__rrRenderResults && window.__rrRenderResults(); } else { renderDemo(); } }
+  else renderStub(v);
+  document.getElementById('scroll').scrollTo({top:0});
+}
+
+// Only run the static prototype when live mode is NOT taking over #scroll.
+if(!window.__RR_LIVE__){ renderDemo(); }
+</script>
+</body>
+</html>
