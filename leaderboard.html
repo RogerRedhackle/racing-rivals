@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Racing Rivals — League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700;8..60,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F0E6; --card:#F8F5EC; --ink:#1A1814; --stamp:#C0241F; --stamp-2:#a91d18;
+  --ink-80:rgba(26,24,20,.80); --ink-60:rgba(26,24,20,.62); --ink-40:rgba(26,24,20,.46);
+  --ink-15:rgba(26,24,20,.15); --ink-08:rgba(26,24,20,.08); --hair:rgba(26,24,20,.22);
+  --win:#1f7a3d; --place:#9a6b00; --gold:#caa53d; --silver:#9a9a9a; --bronze:#b07a44;
+  --amber:#b5751a; --serif:"Source Serif 4",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+html.dark{
+  --paper:#14120F; --card:#1C1A15; --ink:#EDE8DB; --stamp:#e0473f; --stamp-2:#C0241F;
+  --ink-80:rgba(237,232,219,.82); --ink-60:rgba(237,232,219,.66); --ink-40:rgba(237,232,219,.5);
+  --ink-15:rgba(237,232,219,.14); --ink-08:rgba(237,232,219,.07); --hair:rgba(237,232,219,.20);
+  --win:#4fc878; --place:#d9a637; --gold:#e0bb52; --silver:#c7c7c7; --bronze:#d09359; --amber:#e0a44b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#0a0908;color:var(--ink);min-height:100vh;display:flex;justify-content:center}
+.app{width:100%;max-width:430px;min-height:100vh;background:var(--paper);position:relative;display:flex;flex-direction:column;height:100vh}
+.serif{font-family:var(--serif)}.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.topbar{flex-shrink:0;background:var(--paper);border-bottom:2px solid var(--ink);padding:11px 16px;display:flex;align-items:center;justify-content:space-between}
+.tb-logo{font-family:var(--serif);font-weight:900;font-size:17px}.tb-logo em{font-style:normal;color:var(--stamp)}
+.themetog{background:none;border:1px solid var(--hair);border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:14px;color:var(--ink)}
+.scroll{flex:1;overflow-y:auto;padding:16px 16px 22px}
+
+.demo-note{font-family:var(--mono);font-size:9px;color:var(--ink-40);text-align:center;margin-bottom:14px;letter-spacing:.3px}
+
+.kicker{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--stamp);margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.livebadge{font-family:var(--mono);font-size:8.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--paper);background:var(--stamp);padding:2px 7px;border-radius:4px}
+.daytitle{font-family:var(--serif);font-size:25px;font-weight:900;line-height:1.02;margin-bottom:2px}
+.daysub{font-size:12.5px;color:var(--ink-60);margin-bottom:16px}
+
+/* ===== gap-to-leader nudge ===== */
+.lb-nudge{background:var(--ink);color:var(--paper);border-radius:12px;padding:13px 15px;margin-bottom:16px}
+.lb-nudge.lead{background:var(--win)}
+.lb-nudge-k{display:block;font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+.lb-nudge-b{font-size:14px;line-height:1.35}.lb-nudge-b b{font-family:var(--serif);font-weight:900;font-size:17px}
+
+/* ===== leaderboard rows ===== */
+.lb-list{display:flex;flex-direction:column;gap:7px}
+.lb-row{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--hair);border-left:4px solid var(--hair);border-radius:10px;padding:10px 13px}
+.lb-row.rank-1{border-left-color:var(--gold);background:linear-gradient(90deg,rgba(202,165,61,.10),var(--card) 55%)}
+.lb-row.rank-2{border-left-color:var(--silver)}
+.lb-row.rank-3{border-left-color:var(--bronze)}
+.lb-row.you{box-shadow:0 0 0 2px var(--stamp);border-left-color:var(--stamp)}
+.lb-pos{min-width:26px;text-align:center;font-size:17px;font-weight:800;color:var(--ink-60);font-variant-numeric:tabular-nums}
+.lb-row.rank-1 .lb-pos,.lb-row.rank-2 .lb-pos,.lb-row.rank-3 .lb-pos{font-size:19px}
+.lb-avatar{flex-shrink:0;width:36px;height:36px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-weight:900;font-size:14px}
+.lb-row.you .lb-avatar{background:var(--stamp)}
+.lb-main{flex:1;min-width:0}
+.lb-name{font-family:var(--serif);font-weight:700;font-size:15px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbyou{font-family:var(--mono);font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--paper);background:var(--stamp);padding:1px 5px;border-radius:3px;margin-left:6px;vertical-align:middle}
+.lb-meta{font-size:10px;color:var(--ink-60);margin-top:2px;letter-spacing:.2px}
+.lb-pts{font-family:var(--serif);font-weight:900;font-size:19px;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right;min-width:52px}
+.lb-row.rank-1 .lb-pts{color:var(--gold)}
+
+.lb-foot{font-size:9px;color:var(--ink-40);text-align:center;margin-top:16px;letter-spacing:.3px}
+.lb-skel{padding:40px 10px;text-align:center;color:var(--ink-40);font-family:var(--mono);font-size:12px}
+.lb-empty{padding:56px 24px;text-align:center}
+.lb-empty-t{font-family:var(--serif);font-weight:900;font-size:20px;margin-bottom:6px}
+.lb-empty-s{font-size:13px;color:var(--ink-60);line-height:1.5}
+
+.botnav{flex-shrink:0;display:flex;border-top:2px solid var(--ink);background:var(--paper)}
+.botnav button{flex:1;background:none;border:0;padding:9px 4px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-40);font-family:var(--sans)}
+.botnav button .ni{font-size:18px;line-height:1}
+.botnav button .nl{font-size:9.5px;font-weight:700;letter-spacing:.3px}
+.botnav button.on{color:var(--stamp)}
+.botnav button.on .nl{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="tb-logo serif">Racing<em>Rivals</em></div>
+    <button class="themetog" onclick="toggleTheme()" id="ttog">🌙</button>
+  </div>
+
+  <div class="scroll" id="scroll"></div>
+
+  <div class="botnav">
+    <button id="nav-today" onclick="location.href='today.html'"><span class="ni">⏱</span><span class="nl">Today</span></button>
+    <button id="nav-results" onclick="go('results')"><span class="ni">🏁</span><span class="nl">Results</span></button>
+    <button id="nav-league" class="on" onclick="go('league')"><span class="ni">📊</span><span class="nl">League</span></button>
+    <button id="nav-chat" onclick="go('chat')"><span class="ni">💬</span><span class="nl">Chat</span></button>
+  </div>
+</div>
+
+<!-- Auth guard: leaderboard.html reads member-gated standings (RLS:
+     standings_read using is_member(league_id)). A session is required for the
+     live board, so when Supabase is configured an unauthenticated visitor is
+     redirected to sign-in. When NOT configured (offline static preview) the
+     guard stands down and the hardcoded demo board renders. -->
+<script type="module">
+  import { isConfigured } from './lib/config.js';
+  window.__RR_LIVE__ = false;
+  if (isConfigured()) {
+    const { guardRoute } = await import('./lib/session.js');
+    const user = await guardRoute();
+    if (user) {
+      window.__RR_LIVE__ = true;
+      await import('./lib/leaderboard-live.js');
+    }
+  } else {
+    console.warn('[RacingRivals] Supabase not configured — auth guard stood down for static demo.');
+  }
+</script>
+
+<script>
+function toggleTheme(){ const h=document.documentElement; h.classList.toggle('dark'); document.getElementById('ttog').textContent=h.classList.contains('dark')?'☀️':'🌙'; }
+
+function go(v){
+  if(v==='today'){ location.href='today.html'; return; }
+  document.querySelectorAll('.botnav button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('nav-'+v).classList.add('on');
+  if(v==='league'){ if(window.__RR_LIVE__){ window.__rrRenderLeague && window.__rrRenderLeague(); } else { renderDemo(); } return; }
+  const stub={results:['🏁','Results','Your day-by-day scoring breakdown lives here.'],
+              chat:['💬','Chat','Talk to the other runners in your league.']}[v];
+  document.getElementById('scroll').innerHTML =
+    `<div style="padding:70px 24px;text-align:center"><div style="font-size:40px;margin-bottom:14px">${stub[0]}</div>
+     <div style="font-family:var(--serif);font-weight:900;font-size:20px;margin-bottom:6px">${stub[1]}</div>
+     <div style="font-size:13px;color:var(--ink-60);line-height:1.5">${stub[2]}</div></div>`;
+}
+
+/* ---- static demo board (prototype only; runs when live mode is NOT active) --
+   Pride-only, no prize pool. 8 sample runners; "you" highlighted; gap nudge. -- */
+const DEMO = [
+  {rank:1,name:'Priya Nair',pts:42.5,days:6,wins:3,streak:2,you:false},
+  {rank:2,name:'You',pts:38.0,days:6,wins:2,streak:0,you:true},
+  {rank:3,name:'Tom Ellery',pts:35.5,days:6,wins:2,streak:1,you:false},
+  {rank:4,name:'Marcus Webb',pts:29.0,days:5,wins:1,streak:0,you:false},
+  {rank:5,name:'Aoife Byrne',pts:24.5,days:6,wins:1,streak:0,you:false},
+  {rank:6,name:'Dev Shah',pts:19.0,days:4,wins:0,streak:0,you:false},
+  {rank:7,name:'Lena Frost',pts:14.5,days:5,wins:0,streak:0,you:false},
+  {rank:8,name:'Sam Okonkwo',pts:9.0,days:3,wins:0,streak:0,you:false},
+];
+const ini = n => { const p=n.trim().split(/\s+/); return (p.length>=2?p[0][0]+p[1][0]:n.slice(0,2)).toUpperCase(); };
+const p1 = n => (Math.round(n*10)/10).toFixed(1);
+
+function renderDemo(){
+  const me = DEMO.find(r=>r.you), leader = DEMO[0];
+  const gap = Math.round((leader.pts-me.pts)*10)/10;
+  const ahead = DEMO[DEMO.findIndex(r=>r.you)-1];
+  const nudge = me.you && me.rank===1
+    ? `<div class="lb-nudge lead"><span class="lb-nudge-k">Top of the table</span><span class="lb-nudge-b">You lead on ${p1(me.pts)} pts. Keep it clean.</span></div>`
+    : `<div class="lb-nudge"><span class="lb-nudge-k">Gap to leader</span><span class="lb-nudge-b"><b>${p1(gap)}</b> pts off the top — you’re 2nd, chasing ${ahead?ahead.name:''}.</span></div>`;
+  const rows = DEMO.map(r=>{
+    const medal = r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':'';
+    const rc = r.rank<=3?` rank-${r.rank}`:'';
+    return `<div class="lb-row${rc}${r.you?' you':''}">
+      <div class="lb-pos mono">${medal||r.rank}</div>
+      <div class="lb-avatar">${ini(r.name)}</div>
+      <div class="lb-main">
+        <div class="lb-name">${r.you?'You <span class="lbyou">You</span>':r.name}</div>
+        <div class="lb-meta mono">${r.days} days · ${r.wins} win${r.wins===1?'':'s'}${r.streak>0?` · 🔥${r.streak}`:''}</div>
+      </div>
+      <div class="lb-pts mono">${p1(r.pts)}</div>
+    </div>`;}).join('');
+  document.getElementById('scroll').innerHTML =
+    `<div class="demo-note">STATIC PROTOTYPE · not connected — live board loads when signed in</div>
+     <div class="kicker">Tuesday · 1 July <span class="livebadge">Demo</span></div>
+     <div class="daytitle serif">The League</div>
+     <div class="daysub">${DEMO.length} runners · pride, not prizes</div>
+     ${nudge}
+     <div class="lb-list">${rows}</div>
+     <div class="lb-foot mono">Standings settle after each day’s results.</div>`;
+}
+
+// Only run the static prototype when live mode is NOT taking over #scroll.
+if(!window.__RR_LIVE__){ renderDemo(); }
+</script>
+</body>
+</html>
