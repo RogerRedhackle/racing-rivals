@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Connectivity check · Racing Rivals</title>
+
+<!-- ============================================================================
+     DEMO CONNECTION — inject your project URL + anon key here.
+     ----------------------------------------------------------------------------
+     Both values are in Supabase → Project Settings → API.
+     The anon key is PUBLIC by design; RLS enforces access, not secrecy of it.
+     NEVER paste the service_role key here — it bypasses RLS.
+
+     Option A (quick): edit the two lines just below.
+     Option B (preferred, git-ignored): delete the two lines below and instead
+              add   <script src="./lib/env.local.js"></script>   before this
+              block, where env.local.js sets the same two globals.
+     ========================================================================= -->
+<script>
+  window.__RR_SUPABASE_URL__      = window.__RR_SUPABASE_URL__      || 'https://YOUR-DEMO-PROJECT.supabase.co';
+  window.__RR_SUPABASE_ANON_KEY__ = window.__RR_SUPABASE_ANON_KEY__ || 'REPLACE_WITH_DEMO_ANON_KEY';
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700;8..60,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F0E6; --card:#F8F5EC; --ink:#1A1814; --stamp:#C0241F;
+  --ink-80:rgba(26,24,20,.80); --ink-60:rgba(26,24,20,.62); --ink-40:rgba(26,24,20,.46);
+  --ink-15:rgba(26,24,20,.15); --ink-08:rgba(26,24,20,.08); --hair:rgba(26,24,20,.22);
+  --ok:#437A22; --ok-bg:rgba(67,122,34,.12); --warn:#b5751a;
+  --serif:"Source Serif 4",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+html.dark{
+  --paper:#14120F; --card:#1C1A15; --ink:#EDE8DB; --stamp:#e0473f;
+  --ink-80:rgba(237,232,219,.82); --ink-60:rgba(237,232,219,.66); --ink-40:rgba(237,232,219,.5);
+  --ink-15:rgba(237,232,219,.14); --ink-08:rgba(237,232,219,.07); --hair:rgba(237,232,219,.20);
+  --ok:#6DAA45; --ok-bg:rgba(109,170,69,.14); --warn:#d59b3a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#0a0908;color:var(--ink);min-height:100vh;display:flex;justify-content:center}
+.app{width:100%;max-width:560px;min-height:100vh;background:var(--paper);display:flex;flex-direction:column}
+.topbar{flex-shrink:0;background:var(--paper);border-bottom:2px solid var(--ink);padding:11px 16px;display:flex;align-items:center;justify-content:space-between}
+.tb-logo{font-family:var(--serif);font-weight:900;font-size:17px}.tb-logo em{font-style:normal;color:var(--stamp)}
+.themetog{background:none;border:1px solid var(--hair);border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:14px;color:var(--ink)}
+.wrap{padding:24px 20px 40px}
+.kicker{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--stamp);margin-bottom:6px}
+h1{font-family:var(--serif);font-size:27px;font-weight:900;line-height:1.05;margin-bottom:7px}
+.sub{font-size:12.5px;color:var(--ink-60);margin-bottom:18px;line-height:1.5}
+
+.cfg{background:var(--card);border:1px solid var(--hair);border-radius:11px;padding:14px;margin-bottom:16px}
+.cfg .cl{font-family:var(--mono);font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--ink-60);margin-bottom:8px}
+.cfg .row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:3px 0}
+.cfg .row .k{color:var(--ink-60)}
+.cfg .row .v{font-family:var(--mono);font-size:11px;word-break:break-all;text-align:right}
+
+.runbtn{width:100%;padding:14px;border:0;border-radius:9px;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-bottom:18px}
+.runbtn:disabled{opacity:.5;cursor:not-allowed}
+
+.check{background:var(--card);border:1px solid var(--hair);border-radius:11px;padding:14px;margin-bottom:11px}
+.check .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.check .name{font-family:var(--serif);font-weight:700;font-size:15px}
+.check .desc{font-size:11.5px;color:var(--ink-60);margin-top:3px;line-height:1.45}
+.badge{flex-shrink:0;font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:5px 9px;border-radius:20px;border:1px solid var(--hair);color:var(--ink-40)}
+.badge.pending{color:var(--ink-40)}
+.badge.running{color:var(--warn);border-color:var(--warn)}
+.badge.pass{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+.badge.fail{color:#fff;background:var(--stamp);border-color:var(--stamp)}
+.detail{margin-top:9px;font-family:var(--mono);font-size:10.5px;line-height:1.55;color:var(--ink-60);background:var(--ink-08);border-radius:7px;padding:9px 11px;white-space:pre-wrap;word-break:break-word;display:none}
+.detail.show{display:block}
+
+.note{margin-top:16px;font-family:var(--mono);font-size:10px;color:var(--ink-40);line-height:1.6;letter-spacing:.2px}
+.note b{color:var(--ink-60)}
+.hint{margin-top:14px;background:rgba(181,117,26,.1);border:1px solid rgba(181,117,26,.4);border-radius:9px;padding:12px 13px;font-size:12px;color:var(--warn);line-height:1.5;display:none}
+.hint.show{display:block}
+.hint code{font-family:var(--mono);font-size:11px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <span class="tb-logo serif">Racing<em>Rivals</em></span>
+    <button class="themetog" id="ttog" onclick="toggleTheme()">🌙</button>
+  </div>
+
+  <div class="wrap">
+    <div class="kicker">Diagnostics</div>
+    <h1>Connectivity check</h1>
+    <p class="sub">Confirms the demo frontend is talking to Supabase — auth session, public table reads, and the <span class="mono">pick_lock_at</span> RPC. No console required.</p>
+
+    <div class="cfg">
+      <div class="cl">Demo connection</div>
+      <div class="row"><span class="k">Project URL</span><span class="v" id="cfg-url">—</span></div>
+      <div class="row"><span class="k">Anon key</span><span class="v" id="cfg-key">—</span></div>
+      <div class="row"><span class="k">Config status</span><span class="v" id="cfg-status">—</span></div>
+    </div>
+
+    <button class="runbtn" id="run">Run connectivity check</button>
+
+    <div class="hint" id="hint">
+      Not configured yet. Set your project URL + anon key at the top of this file
+      (or add <code>&lt;script src="./lib/env.local.js"&gt;&lt;/script&gt;</code> before the config block).
+      Values live in Supabase → Project Settings → API.
+    </div>
+
+    <!-- CHECK 1 — AUTH -->
+    <div class="check" id="c-auth">
+      <div class="top">
+        <div>
+          <div class="name">1 · Auth session</div>
+          <div class="desc">A live Supabase session — this id is what every RLS policy reads as <span class="mono">auth.uid()</span>.</div>
+        </div>
+        <span class="badge pending" id="b-auth">Pending</span>
+      </div>
+      <div class="detail" id="d-auth"></div>
+    </div>
+
+    <!-- CHECK 2 — PUBLIC READ -->
+    <div class="check" id="c-read">
+      <div class="top">
+        <div>
+          <div class="name">2 · Public table read</div>
+          <div class="desc">Reads a row from <span class="mono">races</span> (public under RLS) — proves the anon key + URL reach PostgREST.</div>
+        </div>
+        <span class="badge pending" id="b-read">Pending</span>
+      </div>
+      <div class="detail" id="d-read"></div>
+    </div>
+
+    <!-- CHECK 3 — RPC -->
+    <div class="check" id="c-rpc">
+      <div class="top">
+        <div>
+          <div class="name">3 · pick_lock_at RPC</div>
+          <div class="desc">Calls <span class="mono">pick_lock_at(today)</span> — the client-callable function the pick UI needs for its lock countdown.</div>
+        </div>
+        <span class="badge pending" id="b-rpc">Pending</span>
+      </div>
+      <div class="detail" id="d-rpc"></div>
+    </div>
+
+    <p class="note">
+      <b>Reading results:</b> all three PASS = the frontend is connected. Check 1 requires you to be signed in (see below).
+      A green check 2 with no session still proves transport works, since <span class="mono">races</span> is a public read.
+      <br><br>
+      <b>Not signed in?</b> Auth will report a warning, not a hard fail — open <a href="./signin.html" style="color:var(--warn)">signin.html</a>, request a magic link, then return and re-run.
+      <br><br>
+      <b>Scope:</b> this page confirms reads + auth + RPC only. Submitting a pick is wired in a later segment.
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const URL = window.__RR_SUPABASE_URL__;
+const KEY = window.__RR_SUPABASE_ANON_KEY__;
+const configured =
+  !!URL && !!KEY &&
+  !URL.includes('YOUR-DEMO-PROJECT') &&
+  KEY !== 'REPLACE_WITH_DEMO_ANON_KEY';
+
+// --- config panel ---
+const mask = k => (k && k.length > 12) ? k.slice(0,6) + '…' + k.slice(-4) : (k || '—');
+document.getElementById('cfg-url').textContent = configured ? URL : (URL || '—');
+document.getElementById('cfg-key').textContent = configured ? mask(KEY) : '—';
+const cfgStatus = document.getElementById('cfg-status');
+cfgStatus.textContent = configured ? 'Configured ✓' : 'Not configured';
+cfgStatus.style.color = configured ? 'var(--ok)' : 'var(--stamp)';
+
+const runBtn = document.getElementById('run');
+const hint = document.getElementById('hint');
+if (!configured) { runBtn.disabled = true; hint.classList.add('show'); }
+
+const supabase = configured
+  ? createClient(URL, KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'rr-demo-auth' } })
+  : null;
+
+function setBadge(id, state, label){
+  const el = document.getElementById(id);
+  el.className = 'badge ' + state;
+  el.textContent = label;
+}
+function setDetail(id, text){
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.classList.add('show');
+}
+
+async function checkAuth(){
+  setBadge('b-auth','running','Running');
+  try {
+    const { data:{ user }, error } = await supabase.auth.getUser();
+    if (error && error.name !== 'AuthSessionMissingError') throw error;
+    if (user){
+      setBadge('b-auth','pass','Pass');
+      setDetail('d-auth', 'Signed in.\nauth.uid() = ' + user.id + '\nemail = ' + (user.email || '—'));
+      return true;
+    }
+    // No session: warn, not fail — transport can still be proven by check 2.
+    setBadge('b-auth','fail','No session');
+    setDetail('d-auth', 'No active session. Open signin.html, request a magic link, then re-run.\n(This is expected before you sign in — it is not a connectivity failure.)');
+    return false;
+  } catch(e){
+    setBadge('b-auth','fail','Fail');
+    setDetail('d-auth', 'Error: ' + (e.message || e));
+    return false;
+  }
+}
+
+async function checkRead(){
+  setBadge('b-read','running','Running');
+  try {
+    const { data, error } = await supabase.from('races').select('id').limit(1);
+    if (error) throw error;
+    setBadge('b-read','pass','Pass');
+    setDetail('d-read', 'PostgREST reachable. races rows returned: ' + (data?.length ?? 0) +
+      (data?.length ? '\nsample id = ' + data[0].id : '\n(table is empty — transport still OK; seed data to populate.)'));
+    return true;
+  } catch(e){
+    setBadge('b-read','fail','Fail');
+    setDetail('d-read', 'Error: ' + (e.message || e) + '\nCheck the URL + anon key, and that migrations 01..03 are applied.');
+    return false;
+  }
+}
+
+async function checkRpc(){
+  setBadge('b-rpc','running','Running');
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const { data, error } = await supabase.rpc('pick_lock_at', { p_date: today });
+    if (error) throw error;
+    setBadge('b-rpc','pass','Pass');
+    setDetail('d-rpc', 'pick_lock_at(' + today + ') = ' + (data ?? 'null') +
+      '\n(null is valid when there are no non-void races that day.)');
+    return true;
+  } catch(e){
+    setBadge('b-rpc','fail','Fail');
+    setDetail('d-rpc', 'Error: ' + (e.message || e) +
+      '\nEnsure pick_lock_at(date) exists and EXECUTE is granted to anon/authenticated (migration 03).');
+    return false;
+  }
+}
+
+runBtn.addEventListener('click', async () => {
+  runBtn.disabled = true;
+  runBtn.textContent = 'Running…';
+  ['b-auth','b-read','b-rpc'].forEach(id => setBadge(id,'pending','Pending'));
+  await checkAuth();
+  await checkRead();
+  await checkRpc();
+  runBtn.disabled = false;
+  runBtn.textContent = 'Re-run connectivity check';
+});
+</script>
+<script>
+function toggleTheme(){ const h=document.documentElement; h.classList.toggle('dark'); document.getElementById('ttog').textContent=h.classList.contains('dark')?'☀️':'🌙'; }
+</script>
+</body>
+</html>
