@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="./env.js"></script>
 <title>Sign in · Racing Rivals</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700;8..60,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -33,6 +34,10 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .msg.err{display:block;background:rgba(192,36,31,.1);color:var(--stamp);border:1px solid rgba(192,36,31,.4)}
 .rg{margin-top:20px;font-family:var(--mono);font-size:9.5px;color:var(--ink-40);letter-spacing:.3px;line-height:1.5}
 .rg a{color:var(--ink-40)}
+button.demo{margin-top:0;background:var(--stamp);color:var(--paper)}
+.demo-note{margin-top:9px;font-family:var(--mono);font-size:9.5px;color:var(--ink-40);letter-spacing:.3px;line-height:1.5;text-align:center}
+.divider{margin:24px 0 4px;display:flex;align-items:center;gap:12px;color:var(--ink-40);font-family:var(--mono);font-size:9.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--hair)}
 </style>
 </head>
 <body>
@@ -42,6 +47,11 @@ button:disabled{opacity:.5;cursor:not-allowed}
     <div class="kicker">Members only</div>
     <h1>Sign in to your leagues</h1>
     <p class="sub">We'll email you a one-tap magic link. No password to remember. Your first sign-in sets up your runner profile automatically.</p>
+
+    <button id="demo" class="demo">Enter demo &mdash; The Paddock</button>
+    <p class="demo-note">One tap to explore the live seeded league as your runner. No sign-up needed.</p>
+
+    <div class="divider">Or sign in with email</div>
 
     <label for="email">Email address</label>
     <input id="email" type="email" autocomplete="email" placeholder="you@example.com" inputmode="email">
@@ -82,6 +92,24 @@ const params = new URLSearchParams(location.search);
 const next = params.get('next') || './today.html';
 const { data:{ session } } = await supabase.auth.getSession();
 if (session) location.replace(next);
+
+// One-tap demo sign-in: authenticate as the seeded "You" runner so the
+// live seeded league (The Paddock) opens immediately, no inbox required.
+const demoEl = document.getElementById('demo');
+demoEl.addEventListener('click', async () => {
+  if (!isConfigured()){
+    show('err', 'Demo Supabase project is not configured yet.');
+    return;
+  }
+  demoEl.disabled = true;
+  show('ok', 'Entering the demo\u2026');
+  const { error } = await supabase.auth.signInWithPassword({
+    email: 'you@demo.racingrivals',
+    password: 'paddock-demo-2026'
+  });
+  if (error){ show('err', error.message); demoEl.disabled = false; return; }
+  location.replace(next);
+});
 
 goEl.addEventListener('click', async () => {
   if (!isConfigured()){
