@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sign in · Racing Rivals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700;8..60,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F0E6; --card:#F8F5EC; --ink:#1A1814; --stamp:#C0241F;
+  --ink-60:rgba(26,24,20,.62); --ink-40:rgba(26,24,20,.46); --hair:rgba(26,24,20,.22);
+  --serif:"Source Serif 4",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#0a0908;color:var(--ink);min-height:100vh;display:flex;justify-content:center}
+.app{width:100%;max-width:430px;min-height:100vh;background:var(--paper);display:flex;flex-direction:column;padding:0}
+.topbar{background:var(--paper);border-bottom:2px solid var(--ink);padding:11px 16px}
+.tb-logo{font-family:var(--serif);font-weight:900;font-size:17px}.tb-logo em{font-style:normal;color:var(--stamp)}
+.wrap{flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 22px}
+.kicker{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--stamp);margin-bottom:8px}
+h1{font-family:var(--serif);font-size:30px;font-weight:900;line-height:1.05;margin-bottom:8px}
+.sub{font-size:13px;color:var(--ink-60);margin-bottom:24px;line-height:1.5}
+label{display:block;font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--ink-60);margin-bottom:7px}
+input[type=email]{width:100%;padding:13px 14px;border:2px solid var(--ink);border-radius:9px;background:var(--card);font-family:var(--sans);font-size:15px;color:var(--ink)}
+input[type=email]:focus{outline:none;border-color:var(--stamp)}
+button{width:100%;margin-top:16px;padding:14px;border:0;border-radius:9px;background:var(--ink);color:var(--paper);font-family:var(--mono);font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+.agegate{margin-top:22px;padding:13px 14px;border:1px solid var(--hair);border-radius:9px;display:flex;gap:10px;align-items:flex-start;font-size:12px;color:var(--ink-60);line-height:1.45}
+.agegate input{margin-top:2px}
+.msg{margin-top:16px;font-size:13px;line-height:1.5;padding:12px 14px;border-radius:9px;display:none}
+.msg.ok{display:block;background:rgba(67,122,34,.12);color:#2f5e17;border:1px solid rgba(67,122,34,.4)}
+.msg.err{display:block;background:rgba(192,36,31,.1);color:var(--stamp);border:1px solid rgba(192,36,31,.4)}
+.rg{margin-top:20px;font-family:var(--mono);font-size:9.5px;color:var(--ink-40);letter-spacing:.3px;line-height:1.5}
+.rg a{color:var(--ink-40)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar"><span class="tb-logo serif">Racing<em>Rivals</em></span></div>
+  <div class="wrap">
+    <div class="kicker">Members only</div>
+    <h1>Sign in to your leagues</h1>
+    <p class="sub">We'll email you a one-tap magic link. No password to remember. Your first sign-in sets up your runner profile automatically.</p>
+
+    <label for="email">Email address</label>
+    <input id="email" type="email" autocomplete="email" placeholder="you@example.com" inputmode="email">
+
+    <div class="agegate">
+      <input id="age" type="checkbox">
+      <span>I confirm I am 18 or over and have read the <a href="#" onclick="return false">responsible-gambling guidance</a>. <!-- RG/age-gate slot: reserved pending regulatory-model decision --></span>
+    </div>
+
+    <button id="go" disabled>Email me a magic link</button>
+
+    <div id="msg" class="msg"></div>
+
+    <p class="rg">18+ · Please play responsibly · Regulatory model pending — demo environment</p>
+  </div>
+</div>
+
+<script type="module">
+import { supabase } from './lib/supabase.js';
+import { isConfigured } from './lib/config.js';
+
+const emailEl = document.getElementById('email');
+const ageEl = document.getElementById('age');
+const goEl = document.getElementById('go');
+const msgEl = document.getElementById('msg');
+
+function refresh(){
+  const validEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailEl.value.trim());
+  goEl.disabled = !(validEmail && ageEl.checked);
+}
+emailEl.addEventListener('input', refresh);
+ageEl.addEventListener('change', refresh);
+
+function show(kind, text){ msgEl.className = 'msg ' + kind; msgEl.textContent = text; }
+
+// If already signed in, bounce straight to the intended page.
+const params = new URLSearchParams(location.search);
+const next = params.get('next') || './today.html';
+const { data:{ session } } = await supabase.auth.getSession();
+if (session) location.replace(next);
+
+goEl.addEventListener('click', async () => {
+  if (!isConfigured()){
+    show('err', 'Demo Supabase project is not configured yet. Set the URL + anon key (see .env.example).');
+    return;
+  }
+  goEl.disabled = true;
+  const email = emailEl.value.trim();
+  const redirectTo = new URL(next, location.href).href;
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: redirectTo }
+  });
+  if (error){ show('err', error.message); goEl.disabled = false; return; }
+  show('ok', 'Check your inbox — tap the link on this device to finish signing in.');
+});
+</script>
+</body>
+</html>

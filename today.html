@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Racing Rivals — Today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700;8..60,900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F0E6; --card:#F8F5EC; --ink:#1A1814; --stamp:#C0241F; --stamp-2:#a91d18;
+  --ink-80:rgba(26,24,20,.80); --ink-60:rgba(26,24,20,.62); --ink-40:rgba(26,24,20,.46);
+  --ink-15:rgba(26,24,20,.15); --ink-08:rgba(26,24,20,.08); --hair:rgba(26,24,20,.22);
+  --win:#1f7a3d; --place:#9a6b00; --gold:#caa53d;
+  --amber:#b5751a; --serif:"Source Serif 4",Georgia,serif; --sans:"Inter",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+html.dark{
+  --paper:#14120F; --card:#1C1A15; --ink:#EDE8DB; --stamp:#e0473f; --stamp-2:#C0241F;
+  --ink-80:rgba(237,232,219,.82); --ink-60:rgba(237,232,219,.66); --ink-40:rgba(237,232,219,.5);
+  --ink-15:rgba(237,232,219,.14); --ink-08:rgba(237,232,219,.07); --hair:rgba(237,232,219,.20);
+  --win:#4fc878; --place:#d9a637; --gold:#e0bb52; --amber:#e0a44b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#0a0908;color:var(--ink);min-height:100vh;display:flex;justify-content:center}
+.app{width:100%;max-width:430px;min-height:100vh;background:var(--paper);position:relative;display:flex;flex-direction:column;height:100vh}
+.serif{font-family:var(--serif)}.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.topbar{flex-shrink:0;background:var(--paper);border-bottom:2px solid var(--ink);padding:11px 16px;display:flex;align-items:center;justify-content:space-between}
+.tb-logo{font-family:var(--serif);font-weight:900;font-size:17px}.tb-logo em{font-style:normal;color:var(--stamp)}
+.themetog{background:none;border:1px solid var(--hair);border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:14px;color:var(--ink)}
+.scroll{flex:1;overflow-y:auto;padding:16px 16px 22px}
+
+/* demo state switcher (prototype only) */
+.statebar{display:flex;gap:5px;margin-bottom:16px;background:var(--ink-08);border:1px solid var(--hair);border-radius:9px;padding:4px}
+.statebar button{flex:1;background:none;border:0;border-radius:6px;padding:7px 3px;font-family:var(--mono);font-size:8.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:var(--ink-40);cursor:pointer;line-height:1.2}
+.statebar button.on{background:var(--ink);color:var(--paper)}
+.demo-note{font-family:var(--mono);font-size:9px;color:var(--ink-40);text-align:center;margin-bottom:14px;letter-spacing:.3px}
+
+.kicker{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--stamp);margin-bottom:5px}
+.daytitle{font-family:var(--serif);font-size:25px;font-weight:900;line-height:1.02;margin-bottom:2px}
+.daysub{font-size:12.5px;color:var(--ink-60);margin-bottom:16px}
+
+/* ===== COUNTDOWN ===== */
+.countwrap{background:var(--ink);color:var(--paper);border-radius:13px;padding:16px;margin-bottom:14px;text-align:center;transition:background .25s}
+.countwrap .cl{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;opacity:.62;margin-bottom:9px}
+.clock{display:flex;justify-content:center;align-items:flex-start;gap:8px}
+.clock .unit{display:flex;flex-direction:column;align-items:center;min-width:52px}
+.clock .num{font-family:var(--serif);font-weight:900;font-size:38px;line-height:.95;font-variant-numeric:tabular-nums;color:var(--cnum,#fff)}
+.clock .ul{font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.55;margin-top:5px}
+.clock .colon{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.05;opacity:.4;color:var(--cnum,#fff)}
+.countwrap .cfoot{font-family:var(--mono);font-size:10.5px;margin-top:11px;opacity:.85}
+.countwrap .cfoot b{color:var(--cnum,#fff)}
+/* deadline tension = colour change ONLY (Roger: minimal) */
+.countwrap.amber{--cnum:#f0b95a}
+.countwrap.red{--cnum:#ff7a6f}
+
+/* ===== PICK SLOT ===== */
+.slot{background:var(--card);border:1px solid var(--hair);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.slot-h{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--ink-08)}
+.slot-h .sh-l{font-family:var(--mono);font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink-60)}
+.slot-h .sh-r{font-family:var(--mono);font-size:10px;font-weight:700}
+.slot-h .sh-r.locked{color:var(--ink-40)}
+.slot-h .sh-r.open{color:var(--win)}
+
+/* empty state */
+.empty{padding:24px 18px;text-align:center}
+.empty .ei{width:54px;height:54px;margin:0 auto 12px;border:2px dashed var(--hair);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ink-40)}
+.empty .et{font-family:var(--serif);font-weight:800;font-size:17px;margin-bottom:4px}
+.empty .es{font-size:12.5px;color:var(--ink-60);line-height:1.5;margin-bottom:16px}
+
+/* filled pick row */
+.pickrow{display:flex;align-items:center;gap:12px;padding:14px}
+.silk{width:42px;height:42px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#3a6ea5 50%,#fff 50%);border:1px solid var(--hair)}
+.pick-meta{flex:1;min-width:0}
+.pick-name{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.05}
+.pick-race{font-family:var(--mono);font-size:10.5px;color:var(--ink-60);margin-top:2px}
+.pick-pts{text-align:right;flex-shrink:0}
+.pick-pts .pp-v{font-family:var(--serif);font-weight:900;font-size:20px;color:var(--win)}
+.pick-pts .pp-l{font-family:var(--mono);font-size:8px;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-40)}
+.pick-pts .pp-plc{font-family:var(--mono);font-size:9px;color:var(--place);margin-top:1px}
+
+.pick-tags{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px}
+.tag{font-family:var(--mono);font-size:8.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;border-radius:5px;padding:3px 7px;border:1px solid}
+.tag.fav-beat{color:var(--stamp);border-color:var(--stamp)}
+.tag.streak{color:var(--gold);border-color:var(--gold)}
+/* reserved Value Flag slot (deferred) */
+.tag.value-reserved{color:var(--ink-40);border-color:var(--hair);border-style:dashed}
+
+.btn{display:block;width:100%;text-align:center;font-family:var(--sans);font-weight:800;font-size:14px;border-radius:9px;padding:13px;cursor:pointer;border:0}
+.btn-primary{background:var(--stamp);color:#fff}
+.btn-ghost{background:none;border:1px solid var(--hair);color:var(--ink);font-weight:700;font-size:13px;padding:11px}
+.slot-foot{padding:0 14px 14px}
+
+/* deadline line under the slot */
+.deadnote{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--ink-60);margin-bottom:16px;justify-content:center}
+.deadnote b{color:var(--ink)}
+.deadnote.amber b{color:var(--amber)}
+.deadnote.red b{color:var(--stamp)}
+
+/* mini standings nudge */
+.nudge{background:var(--card);border:1px solid var(--hair);border-left:3px solid var(--stamp);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.nudge .nl{font-family:var(--mono);font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--stamp);margin-bottom:5px}
+.nudge .nt{font-size:13px;line-height:1.5;color:var(--ink-80)}
+.nudge .nt b{font-weight:800;color:var(--ink)}
+
+/* pre-open helper */
+.preopen{font-size:12.5px;color:var(--ink-60);line-height:1.55;background:var(--card);border:1px solid var(--hair);border-radius:10px;padding:13px 14px;margin-bottom:14px}
+.preopen b{color:var(--ink)}
+
+/* T&C micro note for auto-pick */
+.fineprint{font-family:var(--mono);font-size:9.5px;color:var(--ink-40);line-height:1.5;text-align:center;padding:2px 6px}
+.fineprint u{text-decoration-color:var(--ink-15);cursor:help}
+
+/* bottom nav */
+.botnav{flex-shrink:0;display:flex;border-top:2px solid var(--ink);background:var(--paper)}
+.botnav button{flex:1;background:none;border:0;padding:9px 4px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-40);font-family:var(--sans)}
+.botnav button .ni{font-size:18px;line-height:1}
+.botnav button .nl{font-size:9.5px;font-weight:700;letter-spacing:.3px}
+.botnav button.on{color:var(--stamp)}
+.botnav button.on .nl{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="tb-logo serif">Racing<em>Rivals</em></div>
+    <button class="themetog" onclick="toggleTheme()" id="ttog">🌙</button>
+  </div>
+
+  <div class="scroll" id="scroll"></div>
+
+  <div class="botnav">
+    <button id="nav-today" class="on" onclick="go('today')"><span class="ni">⏱</span><span class="nl">Today</span></button>
+    <button id="nav-results" onclick="go('results')"><span class="ni">🏁</span><span class="nl">Results</span></button>
+    <button id="nav-league" onclick="go('league')"><span class="ni">📊</span><span class="nl">League</span></button>
+    <button id="nav-chat" onclick="go('chat')"><span class="ni">💬</span><span class="nl">Chat</span></button>
+  </div>
+</div>
+
+<!-- Auth guard: today.html is a pick-submission route. Every pick INSERT is
+     RLS-checked against auth.uid(), so a session is required before the pick UI
+     is usable. When Supabase is configured, an unauthenticated visitor is
+     redirected to sign-in; when it is NOT configured (offline static preview),
+     the guard stands down so the hardcoded demo still renders. -->
+<script type="module">
+  import { isConfigured } from './lib/config.js';
+  if (isConfigured()) {
+    const { guardRoute } = await import('./lib/session.js');
+    // Redirects to signin.html?next=today.html when there is no live session.
+    await guardRoute();
+  } else {
+    console.warn('[RacingRivals] Supabase not configured — auth guard stood down for static demo.');
+  }
+</script>
+
+<script>
+function toggleTheme(){ const h=document.documentElement; h.classList.toggle('dark'); document.getElementById('ttog').textContent=h.classList.contains('dark')?'☀️':'🌙'; }
+
+/* ---- demo states ---------------------------------------------------------
+   preopen  : before 07:30 — pick window not open yet, counting to OPEN
+   unpicked : window open, no horse chosen, plenty of time
+   pending  : horse chosen, can still change, plenty of time
+   approaching: horse chosen, deadline near — countdown turns colour only
+--------------------------------------------------------------------------- */
+const STATES = {
+  preopen:     { label:'Pre-open', mins: 13*60+20, to:'open',     picked:false, tone:'normal' },
+  unpicked:    { label:'Unpicked', mins: 4*60+12,  to:'deadline', picked:false, tone:'normal' },
+  pending:     { label:'Pending',  mins: 2*60+45,  to:'deadline', picked:true,  tone:'normal' },
+  approaching: { label:'Deadline near', mins: 4,    to:'deadline', picked:true,  tone:'red' }
+};
+let cur='unpicked';
+
+// the runner's chosen horse (demo)
+const PICK = { name:'Lunar Spence', race:'Newmarket 2:40', sp:'7/2', winPts:3.5, plcPts:1.8, favBeat:false, streakDay:2 };
+
+const fmt = m => {
+  const h=Math.floor(m/60), mm=m%60;
+  return {h:String(h).padStart(2,'0'), m:String(mm).padStart(2,'0')};
+};
+function toneFor(mins,to){
+  if(to==='open') return 'normal';
+  if(mins<=5) return 'red';
+  if(mins<=30) return 'amber';
+  return 'normal';
+}
+
+function render(){
+  const s=STATES[cur];
+  const t=fmt(s.mins);
+  const tone = s.tone==='red' ? toneFor(s.mins,s.to) : toneFor(s.mins,s.to);
+  const toOpen = s.to==='open';
+
+  // --- countdown block ---
+  const clabel = toOpen ? "Picks open at 07:30" : "Lock in by 12:30 (or 30m before the first race)";
+  const cfoot  = toOpen
+     ? "Come back at <b>7:30am</b> to choose your runner"
+     : (tone==='red' ? "<b>Last chance</b> — change or keep your pick"
+        : tone==='amber' ? "Deadline approaching — <b>review your pick</b>"
+        : "Plenty of time — change your pick whenever");
+
+  const count = `
+    <div class="countwrap ${tone}">
+      <div class="cl">${clabel}</div>
+      <div class="clock">
+        <div class="unit"><span class="num">${t.h}</span><span class="ul">Hours</span></div>
+        <div class="colon">:</div>
+        <div class="unit"><span class="num">${t.m}</span><span class="ul">Mins</span></div>
+      </div>
+      <div class="cfoot">${cfoot}</div>
+    </div>`;
+
+  // --- pick slot ---
+  let slot, dead='', nudge='', extra='';
+  if(toOpen){
+    slot = `
+      <div class="slot">
+        <div class="slot-h"><span class="sh-l">Today's pick</span><span class="sh-r locked">🔒 Opens 7:30</span></div>
+        <div class="empty">
+          <div class="ei">⏱</div>
+          <div class="et">Not open yet</div>
+          <div class="es">Picking opens at 7:30am every morning. We'll have the full day's card ready for you then.</div>
+          <button class="btn btn-ghost" disabled style="opacity:.5;cursor:default">Browse yesterday's results</button>
+        </div>
+      </div>`;
+    extra = `<div class="preopen">One horse, any race, every day for <b>7 days</b>. The longer the odds, the bigger the points — and beating the favourite or stringing days together earns <b>bonuses</b>. Your next window opens at <b>7:30am</b>.</div>`;
+  } else if(!s.picked){
+    // UNPICKED
+    slot = `
+      <div class="slot">
+        <div class="slot-h"><span class="sh-l">Today's pick</span><span class="sh-r open">● Open</span></div>
+        <div class="empty">
+          <div class="ei">+</div>
+          <div class="et">No runner yet</div>
+          <div class="es">Choose one horse from any race today. You can change it right up to the deadline.</div>
+          <button class="btn btn-primary" onclick="alert('Opens the racecard to choose (Phase 2)')">Pick your runner</button>
+          <div style="height:8px"></div>
+          <div class="fineprint">Reserved: <span class="tag value-reserved" style="display:inline-block">Value flag</span> coming soon</div>
+        </div>
+      </div>`;
+    dead = `<div class="deadnote ${tone}">Deadline <b>12:30pm</b> · or 30 min before the first race</div>`;
+    extra = `<div class="fineprint">No pick by the deadline means <u title="You score nothing that day and any streak resets">no score today</u> — and your streak resets. Don't miss it.</div>`;
+  } else {
+    // PENDING / APPROACHING — horse chosen
+    const headR = tone==='red'
+      ? `<span class="sh-r" style="color:var(--stamp)">● Closing</span>`
+      : `<span class="sh-r open">● Locked in · changeable</span>`;
+    slot = `
+      <div class="slot">
+        <div class="slot-h"><span class="sh-l">Today's pick</span>${headR}</div>
+        <div class="pickrow">
+          <div class="silk"></div>
+          <div class="pick-meta">
+            <div class="pick-name">${PICK.name}</div>
+            <div class="pick-race">${PICK.race} · ${PICK.sp}</div>
+          </div>
+          <div class="pick-pts">
+            <div class="pp-v">+${PICK.winPts}</div>
+            <div class="pp-l">win pts</div>
+            <div class="pp-plc">+${PICK.plcPts} place</div>
+          </div>
+        </div>
+        <div class="pick-tags">
+          ${PICK.favBeat?'<span class="tag fav-beat">Beats fav · +2 on a win</span>':''}
+          ${PICK.streakDay>1?`<span class="tag streak">Win streak day ${PICK.streakDay} · +${PICK.streakDay-1}</span>`:''}
+          <span class="tag value-reserved">Value flag · soon</span>
+        </div>
+        <div class="slot-foot">
+          <button class="btn btn-ghost" onclick="alert('Reopens the racecard to change (Phase 2)')">Change pick</button>
+        </div>
+      </div>`;
+    dead = `<div class="deadnote ${tone}">${tone==='red'?'Closes in <b>4 min</b> · keep or change now':'Change until <b>12:30pm</b> · or 30 min before the first race'}</div>`;
+    nudge = `
+      <div class="nudge">
+        <div class="nl">Why this pick matters</div>
+        <div class="nt">You're <b>4th of 20</b> in The Paddock. Lunar Spence winning is <b>+4.5</b> with your win-streak bonus — enough to <b>jump to 2nd</b>. A longer-priced runner could take the top.</div>
+      </div>`;
+  }
+
+  document.getElementById('scroll').innerHTML = `
+    <div class="statebar">
+      ${Object.keys(STATES).map(k=>`<button class="${k===cur?'on':''}" onclick="setState('${k}')">${STATES[k].label}</button>`).join('')}
+    </div>
+    <div class="demo-note">▲ prototype state switcher — not in the real app</div>
+    <div class="kicker">Tuesday · 30 June</div>
+    <div class="daytitle">Today's runner</div>
+    <div class="daysub">${toOpen?'Your pick window opens at 7:30am.':'Pick one horse from any race today.'}</div>
+    ${count}
+    ${slot}
+    ${dead}
+    ${nudge}
+    ${extra}
+  `;
+}
+function setState(k){ cur=k; render(); }
+
+function go(v){
+  document.querySelectorAll('.botnav button').forEach(b=>b.classList.remove('on'));
+  document.getElementById('nav-'+v).classList.add('on');
+  if(v==='today'){ render(); return; }
+  const stub={results:['🏁','Results','Your day-by-day scoring breakdown lives here.'],
+              league:['📊','League','The 20-runner standings and gap-to-leader nudge.'],
+              chat:['💬','Chat','Talk to the other runners in your league.']}[v];
+  document.getElementById('scroll').innerHTML =
+    `<div style="padding:70px 24px;text-align:center"><div style="font-size:40px;margin-bottom:14px">${stub[0]}</div>
+     <div style="font-family:var(--serif);font-weight:900;font-size:20px;margin-bottom:6px">${stub[1]}</div>
+     <div style="font-size:13px;color:var(--ink-60);line-height:1.5">${stub[2]}</div></div>`;
+}
+
+render();
+</script>
+</body>
+</html>
