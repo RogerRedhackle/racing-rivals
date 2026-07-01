@@ -12,8 +12,9 @@ This is the engineering-ready data model for ScoreBox / Racing Rivals. It implem
 | 3 | `03_rls_policies.sql` | Base grants + Row-Level Security + function-execute lockdown |
 | 4 | `04_tiebreaks.sql` | Strict tie-break ladder + `h2h_edge()` + extra `standings` columns |
 | 5 | `05_orchestration.sql` | Readiness-gating helpers, the three orchestrator RPCs (`score_ready_days`, `settle_due_challenges`, `orchestrate_tick`), the `scoring_runs` audit log, and the optional pg_cron schedule |
+| 6 | `06_ingest.sql` | The racing-data write path: five idempotent, service_role-only RPCs (`ingest_meeting`, `ingest_race`, `ingest_runners`, `set_race_status`, `apply_result`) + the `ingest_runs` audit log |
 
-The scheduling layer that drives migration 05 lives in `scheduler/` (Edge Function, Node fallback, and full runbook) — see **Scheduling & orchestration** below.
+The scheduling layer that drives migration 05 lives in `scheduler/` (Edge Function, Node fallback, and full runbook) — see **Scheduling & orchestration** below. The racing-data ingest worker that drives migration 06 lives in `ingest/` (provider-agnostic worker, The Racing API adapter, and full runbook) — see **Racing-data ingest** below.
 
 In a fresh Supabase project: paste each file into the SQL editor in order (the `auth` schema and roles `anon` / `authenticated` / `service_role` already exist there — the local stub in this folder is only for standalone testing).
 
@@ -101,8 +102,20 @@ New `standings` columns back this: `best_day_pts`, `longest_streak`, `no_picks`,
 - **Profanity filter** is an app/edge-function concern; the DB stores `is_hidden` for soft-moderation and `message_reports`.
 - **Realtime**: enable Supabase Realtime on `daily_scores`, `standings`, `chat_messages` for live leaderboards/chat.
 - **Scheduling**: ✅ **shipped** — see migration 05 + the `scheduler/` folder below. A single idempotent RPC, `orchestrate_tick`, scores days and settles challenges only once the racing is resulted; you point pg_cron (or an Edge Function / Node cron) at it.
-- **Data ingest**: the service that writes `runners` (with SP + favourite flag) and `race_results` from your chosen racing feed.
+- **Data ingest**: ✅ **shipped** — see migration 06 + the `ingest/` folder below. A provider-agnostic worker (The Racing API adapter first) writes runners, odds, favourites and results through idempotent, service_role-only RPCs, then flips races to `resulted` so the engine scores them.
 - **Multi-sport**: the same engine generalises — a new sport pack swaps the "field / pick / price / result" tables; `score_pick` becomes the racing implementation of a shared interface (see the multi-sport strategy memo).
+
+---
+
+## Racing-data ingest (migration 06 + `ingest/`)
+
+The trusted write path that turns a racing feed into the rows the engine scores. All integrity lives in the DB; the worker is thin and provider-swappable.
+
+**Five idempotent, `service_role`-only RPCs** (migration 06): `ingest_meeting` and `ingest_race` upsert on natural keys; `ingest_runners` reconciles the **whole field** in one call (upsert each runner, mark anyone now absent as `non_runner` — **never deleted**, so picks are preserved — and set **exactly one favourite**: explicit flag wins, else shortest price); `set_race_status` is the only way status moves (**forward-only**: `scheduled→open→locked→resulted`, any→`void`); and `apply_result` optionally locks closing SP, writes the finishing order (delete-then-insert), and flips the race to `resulted` — the signal the engine gates on. Every call writes an audit row to `public.ingest_runs`.
+
+**Provider-agnostic worker** (`ingest/`): every provider adapter converts its feed into one normalised shape (`types.ts`), so swapping or adding a provider is a single new adapter file — the worker, RPCs and schema never change. The Racing API adapter ships first (`adapters/theracingapi.ts`), with all field-name mapping centralised in one place. Run `ingest/run.ts cards|results [date]` on Render Cron / crontab / an Edge Function; pair with the orchestrator (order each cycle: **ingest results → orchestrate tick**). Full details in `ingest/README.md`.
+
+**Verified** on PostgreSQL 18 (clean apply 01→06) with the real Royal Hunt Cup card: meeting/race/runner ingest; favourite auto-derived to the shortest price and overridable by an explicit flag; `decimal_odds` generated correctly; re-ingest with drifted odds stays consistent; absent runners marked `non_runner` (rows + picks preserved); result applied and the race flips to `resulted` so the engine scores the day; a result correction re-applies with no duplicate rows; the status machine rejects backward transitions. Zero errors.
 
 ---
 

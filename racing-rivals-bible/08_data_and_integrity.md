@@ -81,8 +81,24 @@ Tunables: `lookback_days` (default 3 — re-checks for late result corrections) 
 
 ## Validation pattern (for engineering)
 
-Apply `01 → 02 → 03 → 04 → 05` to a clean Postgres 18 instance (with the local `auth` stub for standalone testing; in Supabase the `auth` schema and the roles already exist). Seed the real Ascot demo data, run the scoring engine across win/place/fav/miss/no-pick + streak scenarios, then run the 7 tamper tests and the tie-break scenarios. For orchestration, verify the readiness gates (resulted day = ready, day with a scheduled race = not ready, no-racing day = not ready), that a tick scores the ready day and settles the closed challenge, that a second tick is a clean no-op, and that a day scores only once its last race is resulted. All must pass.
+Apply `01 → 02 → 03 → 04 → 05 → 06` to a clean Postgres 18 instance (with the local `auth` stub for standalone testing; in Supabase the `auth` schema and the roles already exist). Seed the real Ascot demo data, run the scoring engine across win/place/fav/miss/no-pick + streak scenarios, then run the 7 tamper tests and the tie-break scenarios. For orchestration, verify the readiness gates (resulted day = ready, day with a scheduled race = not ready, no-racing day = not ready), that a tick scores the ready day and settles the closed challenge, that a second tick is a clean no-op, and that a day scores only once its last race is resulted. For ingest, verify idempotent meeting/race/runner upserts, favourite derivation + explicit-flag override, non-runner marking (rows preserved), result apply → race resulted → engine scores, result-correction re-apply with no duplicate rows, and rejection of a backward status transition. All must pass.
+
+## Racing-data ingest  🟥 PACK (racing)
+
+The trusted write path that turns a racing feed into the rows the engine scores. **All integrity lives in the DB; the worker is thin and provider-swappable.** Migration `06_ingest.sql` adds five idempotent, `service_role`-only RPCs:
+
+- `ingest_meeting(course, date, going, festival_slug)` — upsert a meeting on `(course, meeting_date)`.
+- `ingest_race(meeting_id, race_no, …)` — upsert a race on `(meeting_id, race_no)`; **status is never moved here**.
+- `ingest_runners(race_id, runners_jsonb)` — reconcile the **whole field** in one call: upsert each runner by `cloth_no`, mark anyone now absent as `non_runner` (**never deleted** — a pick on them is preserved and voids/scores correctly), and set **exactly one favourite** (explicit `is_favourite` flag wins; else the shortest `decimal_odds`, tie-broken by lowest cloth_no).
+- `set_race_status(race_id, status)` — the **only** way status moves. Forward-only: `scheduled → open → locked → resulted`; any → `void`; plus a `resulted → void` correction. A stale re-poll can't knock a resulted race backwards.
+- `apply_result(race_id, placings_jsonb, void_race, final_odds_jsonb)` — optionally lock closing SP onto runners, write the finishing order to `race_results` (delete-then-insert, so a correction cleanly replaces the prior result), and flip the race to `resulted` — the exact signal `orchestrate_tick` gates on.
+
+Every call writes an audit row to `public.ingest_runs` (the write-side mirror of `scoring_runs`).
+
+**Worker** (`scorebox-schema/ingest/`): a thin TS worker calls these RPCs over PostgREST with the service-role key and issues no raw SQL. Every provider adapter converts its feed into one **normalised shape** (`types.ts`), so adding or swapping a feed is a single new adapter file — the worker, the RPCs and the schema never change. The Racing API adapter ships first, with all field-name mapping centralised in one place. Run `ingest/run.ts cards|results [date]` on a scheduler; each cycle the natural order is **ingest results → orchestrate tick**. Full runbook: `scorebox-schema/ingest/README.md`.
+
+**Idempotent end-to-end** — a re-poll or a duplicated webhook converges to the same state and never double-writes; safe to run unattended and frequently.
 
 ## 🟦 Sport-pack note
 
-For a new sport, only the **PACK** tables change: `festivals→meetings→races→runners` becomes the sport's field/fixtures structure, `race_results` becomes that sport's result table, and `pick_lock_at` + `score_pick`'s field reads adapt. The four-layer integrity model, `daily_scores`/`standings`, tie-breaks, H2H, chat, **the entire scheduling/orchestration layer** (it gates on "are this day's events resulted?", not on racing specifics) and the service_role-only write discipline are inherited unchanged.
+For a new sport, only the **PACK** tables change: `festivals→meetings→races→runners` becomes the sport's field/fixtures structure, `race_results` becomes that sport's result table, and `pick_lock_at` + `score_pick`'s field reads adapt. The four-layer integrity model, `daily_scores`/`standings`, tie-breaks, H2H, chat, **the entire scheduling/orchestration layer** (it gates on "are this day's events resulted?", not on racing specifics), **the ingest worker + normalised-shape contract** (a new sport writes a new adapter, not a new worker), and the service_role-only write discipline are inherited unchanged.

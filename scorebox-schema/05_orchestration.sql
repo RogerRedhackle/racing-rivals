@@ -318,6 +318,12 @@ grant execute on function public.score_ready_days(int,date)   to service_role;
 grant execute on function public.settle_due_challenges(date)  to service_role;
 grant execute on function public.orchestrate_tick(int,date)   to service_role;
 
+-- the read-only gate helpers are useful for ops/monitoring (e.g. "is this day
+-- ready to score yet?") so the trusted backend may call them directly too.
+grant execute on function public.day_is_resulted(date)             to service_role;
+grant execute on function public.league_day_is_resulted(uuid,date) to service_role;
+grant execute on function public.day_is_scored(uuid,date)          to service_role;
+
 -- scoring_runs: readable by members? No — engine-only by default (no policy =
 -- no client access under RLS). Enable RLS so it's locked like the rest.
 alter table public.scoring_runs enable row level security;
