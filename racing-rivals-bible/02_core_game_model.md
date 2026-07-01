@@ -12,7 +12,7 @@ The fundamental loop. The *shape* is ENGINE; the racing nouns are PACK.
 
 ## Leagues & runners  🟦 ENGINE
 
-- A **league** holds up to **20 runners** ("runner" = a *player*, never a horse).
+- A **league** holds **10 runners** by default, partner-configurable (2–100) ("runner" = a *player*, never a horse). Every league has a **name** and its own **leaderboard**.
 - Multiple leagues can exist; a runner can be in several at once (e.g. a festival league *and* a season league simultaneously — the same daily pick can feed multiple leagues, one pick row per league per day).
 - Standings are **per league**, ranked by cumulative points.
 

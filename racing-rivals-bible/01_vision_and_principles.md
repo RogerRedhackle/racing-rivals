@@ -2,7 +2,7 @@
 
 ## What the game is (one paragraph, sport-agnostic)
 
-> Each round, every player makes **one pick** from a **priced field**. Picks are scored on an **odds-weighted value curve**, with a **beat-the-favourite** bonus and a **consecutive-success streak** bonus. Players compete in fixed-size leagues (**20 runners**) over a bounded run — a **Day**, a **Festival/Event**, or a whole **Season** — for points, standings, **pride-only** head-to-head rivalry and bragging rights.
+> Each round, every player makes **one pick** from a **priced field**. Picks are scored on an **odds-weighted value curve**, with a **beat-the-favourite** bonus and a **consecutive-success streak** bonus. Players compete in named leagues (**10 runners by default**, partner-configurable) over a bounded run — a **Day**, a **Festival/Event**, or a whole **Season** — for points, standings, **pride-only** head-to-head rivalry and bragging rights.
 
 Every word of that is sport-agnostic. Racing Rivals is the first skin on this engine. (See `09_multisport_engine.md`.)
 

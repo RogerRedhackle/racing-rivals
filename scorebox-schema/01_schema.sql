@@ -139,7 +139,7 @@ create unique index uniq_one_favourite_per_race
   on public.runners (race_id) where (is_favourite = true);
 
 -- ============================================================================
--- 3. LEAGUES  (a competition instance: a mode + a window + up to 20 runners)
+-- 3. LEAGUES  (a competition instance: a mode + a window + runners; standard 10, partner-configurable 2-100)
 -- ============================================================================
 
 create table public.leagues (
@@ -153,7 +153,7 @@ create table public.leagues (
   -- for season it's the campaign; for day it's a single date.
   starts_on     date not null,
   ends_on       date not null,
-  max_runners   smallint not null default 20 check (max_runners between 2 and 20),
+  max_runners   smallint not null default 10 check (max_runners between 2 and 100), -- standard table = 10; partner-configurable (see 09_league_size.sql)
   status        league_status not null default 'forming',
   created_by    uuid not null references public.profiles(id),
   created_at    timestamptz not null default now(),

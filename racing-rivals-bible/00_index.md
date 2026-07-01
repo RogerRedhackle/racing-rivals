@@ -43,8 +43,8 @@ A new sport pack = fill in the four adapter slots (Field / Pick / Price / Result
 
 | Term | Meaning |
 |------|---------|
-| **Runner** | A *player* in a league (NOT a horse). A league holds 20 runners. |
-| **League** | A competition instance of up to 20 runners over a bounded run. |
+| **Runner** | A *player* in a league (NOT a horse). A standard league holds 10 runners (partner-configurable, 2–100). |
+| **League** | A competition instance of runners over a bounded run. Standard size is 10; partners may define their own size (2–100). |
 | **Field** | The set of options a runner picks ONE from each round (in racing: every horse running that day). |
 | **Pick** | A runner's single daily selection, of kind `win` or `place`. |
 | **Win base** | The fractional-odds number itself (9/1 → 9, 7/2 → 3.5, evens → 1). |

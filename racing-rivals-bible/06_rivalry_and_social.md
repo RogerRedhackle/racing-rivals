@@ -17,7 +17,7 @@ All of this is engine-level and inherited by every sport with zero rework — a 
 
 ## League chat
 
-- **Scope:** league chat among the 20 runners in a league.
+- **Scope:** league chat among the runners in a league (10 by default, partner-configurable).
 - **Moderation:** profanity filter (app/edge-function concern; the DB stores `is_hidden` for soft-moderation), plus **report** and **mute**. `message_reports` and `user_mutes` tables exist.
 - Chat is **not scoring-critical** — it's social colour.
 

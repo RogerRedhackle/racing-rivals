@@ -11,7 +11,7 @@ Decided to resolve "too much information on one page." Bottom-nav app, **four ta
 | **Today** | Countdown to next pick + today's selection + change-until deadline. The home base. |
 | **Results** | Day-by-day scoring breakdown — the "maths is always open" surface. **Built first** (it locks the points visual language). |
 | **League** | The decluttered leaderboard (points-only, gap-to-leader nudge). Rivalry is a sub-view here. |
-| **Chat** | League chat among the 20 runners. |
+| **Chat** | League chat among the runners (10 by default, partner-configurable). |
 
 ## Today screen — pick submission
 
