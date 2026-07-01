@@ -56,7 +56,12 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------------
--- 1. THE LEAGUE  "The Paddock"  (season mode, LIVE, 3-day window)
+-- 1. THE LEAGUE  "The Paddock"  (season mode, LIVE)
+--    Scoring history sits on 16-18 Jun 2026, but ends_on is kept in the future
+--    (current_date + 60) so the league always "covers today" — the client
+--    (getMyActiveLeague) only surfaces a league whose [starts_on, ends_on]
+--    window contains today. A fixed past ends_on would make the demo show
+--    "No live league yet" the moment the calendar moves past it.
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -71,11 +76,11 @@ begin
       (name, mode, invite_code, starts_on, ends_on, max_runners, status, created_by)
     values
       ('The Paddock', 'season', 'PADDOCK-01',
-       date '2026-06-16', date '2026-06-18', 10, 'live', u_you)
+       date '2026-06-16', current_date + 60, 10, 'live', u_you)
     returning id into l_id;
   else
     update public.leagues
-       set status = 'live', starts_on = date '2026-06-16', ends_on = date '2026-06-18'
+       set status = 'live', starts_on = date '2026-06-16', ends_on = current_date + 60
      where id = l_id;
   end if;
 
